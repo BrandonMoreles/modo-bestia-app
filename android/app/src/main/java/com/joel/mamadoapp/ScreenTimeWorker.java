@@ -35,6 +35,7 @@ public class ScreenTimeWorker extends Worker {
     @Override
     public Result doWork() {
         Context ctx = getApplicationContext();
+        try { PetWidgetProvider.refreshAll(ctx); } catch (Exception ignored) { }
         try {
             SharedPreferences sp = ctx.getSharedPreferences(ScreenTimePlugin.PREFS, Context.MODE_PRIVATE);
             if (!sp.getBoolean("enabled", false) || !ScreenTimeUtil.hasPermission(ctx)) return Result.success();

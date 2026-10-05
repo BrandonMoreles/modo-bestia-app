@@ -4,4 +4,5 @@
     <string name="title_activity_main">Modo Bestia</string>
     <string name="package_name">com.joel.mamadoapp</string>
     <string name="custom_url_scheme">com.joel.mamadoapp</string>
+    <string name="pet_widget_desc">Tu mascota de Modo Bestia con recordatorios</string>
 </resources>

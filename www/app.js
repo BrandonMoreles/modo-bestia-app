@@ -35,6 +35,8 @@ const DEFAULTS = {
     {id: "h1", nombre: "Creatina"}, {id: "h2", nombre: "Dormir 7–9 h"}, {id: "h3", nombre: "Primeros 30 min sin redes"}],
   habLog: {}, enfoqueLog: {},
   pomo: {modo: 25, fase: "enfoque", fin: null, resta: null},
+  retos: [], retoN: 0, puntos: {saldo: 0, xp: 0, log: []}, otorgados: {}, logros: {}, rachaRecord: 0,
+  mascota: {nombre: "Bestia", color: "amarillo", fondo: "ninguno", equipo: {cabeza: null, cara: null, mano: null, cuerpo: null}, inventario: []},
   ajustes: {
     peso: "", metas: {kcal: 2800, p: 150, c: 340, g: 80},
     aguaMeta: 3000, vaso: 250,
@@ -83,8 +85,8 @@ function irA(t) {
 document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => irA(b.dataset.tab));
 
 function render() {
-  stopPomoTick();
-  ({hoy: vHoy, gym: vGym, comida: vComida, enfoque: vEnfoque, ajustes: vAjustes})[tab]();
+  stopPomoTick(); clearInterval(retoInt);
+  ({hoy: vHoy, gym: vGym, comida: vComida, enfoque: vEnfoque, bestia: vBestia, ajustes: vAjustes})[tab]();
 }
 const view = () => $("#view");
 
@@ -145,8 +147,9 @@ function vHoy() {
   const focoHoy = D.enfoqueLog[f] || 0;
 
   view().innerHTML = `
-    <h1>${esc(cap(fmtFecha(f, true)))}</h1>
+    <div class="row" style="justify-content:space-between;align-items:flex-start"><h1>${esc(cap(fmtFecha(f, true)))}</h1><button class="iconbtn" style="font-size:1.5rem" aria-label="Ajustes" data-act="ir" data-to="ajustes">⚙</button></div>
     <p class="sub">${entrenosSemana()} de 4 entrenamientos esta semana</p>
+    ${petCard()}
 
     <section class="card">
       <div class="card-head"><h2>Agua</h2><span class="muted small">${pct(agua, metaA)}%</span></div>
@@ -193,8 +196,9 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 ACT.ir = el => irA(el.dataset.to);
 ACT.agua = el => {
   const f = hoy(); D.agua[f] = Math.max(0, (D.agua[f] || 0) + num(el.dataset.ml)); guardar();
-  if (D.agua[f] >= D.ajustes.aguaMeta && num(el.dataset.ml) > 0 && D.agua[f] - num(el.dataset.ml) < D.ajustes.aguaMeta) toast("¡Meta de agua cumplida! 💧");
-  render();
+  if (D.agua[f] >= D.ajustes.aguaMeta) { if (otorgar("agua:" + f, PTS.agua, "Meta de agua")) toast(`¡Meta de agua cumplida! +${PTS.agua} 💧`); }
+  else revocar("agua:" + f, "Quitaste agua");
+  syncWidget(); render();
 };
 
 // ================= HÁBITOS =================
@@ -210,8 +214,11 @@ function habitoFila(h, f) {
 }
 ACT.habito = el => {
   const f = hoy(); const arr = D.habLog[f] || (D.habLog[f] = []);
-  const i = arr.indexOf(el.dataset.id); if (i >= 0) arr.splice(i, 1); else arr.push(el.dataset.id);
-  guardar(); const y = scrollY; render(); scrollTo(0, y);
+  const id = el.dataset.id, h = D.habitos.find(x => x.id === id);
+  const i = arr.indexOf(id);
+  if (i >= 0) { arr.splice(i, 1); revocar(`hab:${f}:${id}`, `Desmarcaste: ${h ? h.nombre : "hábito"}`); }
+  else { arr.push(id); otorgar(`hab:${f}:${id}`, PTS.habito, `Hábito: ${h ? h.nombre : ""}`); toast(`+${PTS.habito} puntos`); }
+  guardar(); programarHabitos(); syncWidget(); const y = scrollY; render(); scrollTo(0, y);
 };
 
 // ================= GYM =================
@@ -307,7 +314,8 @@ ACT.guardarEntreno = () => {
   D.sesiones = D.sesiones.filter(s => s.id !== b.id);
   D.sesiones.push({id: b.id, fecha: b.fecha, dia: b.dia, ejercicios, nota: b.nota || ""});
   ordenarSesiones(); D.borrador = null; guardarYa(); pararDescanso();
-  toast("Entrenamiento guardado 💪"); sub.gym = "historial"; render(); scrollTo(0, 0);
+  const nuevoPts = otorgar("gym:" + b.id, PTS.gym, `Entrenamiento: ${(RUTINA[b.dia] || {nombre: ""}).nombre}`);
+  toast(nuevoPts ? `Entrenamiento guardado 💪 +${PTS.gym}` : "Entrenamiento guardado 💪"); sub.gym = "historial"; render(); scrollTo(0, 0);
 };
 
 function gymHistorial(head) {
@@ -653,7 +661,7 @@ function startPomoTick() { stopPomoTick(); pomoInt = setInterval(() => { const e
 function stopPomoTick() { clearInterval(pomoInt); pomoInt = null; }
 function revisarPomo() {
   const P = D.pomo; if (!P.fin || Date.now() < P.fin) return;
-  if (P.fase === "enfoque") { const f = hoy(); D.enfoqueLog[f] = (D.enfoqueLog[f] || 0) + P.modo; P.fase = "descanso"; toast(`¡${P.modo} min de enfoque! Tómate un descanso.`); }
+  if (P.fase === "enfoque") { const f = hoy(); D.enfoqueLog[f] = (D.enfoqueLog[f] || 0) + P.modo; P.fase = "descanso"; otorgar("pomo:" + P.fin, PTS.pomo, `Pomodoro de ${P.modo} min`); toast(`¡${P.modo} min de enfoque! +${PTS.pomo} puntos`); }
   else { P.fase = "enfoque"; toast("Descanso terminado. ¿Otro bloque?"); }
   P.fin = null; P.resta = null; guardarYa(); try { navigator.vibrate && navigator.vibrate(400); } catch (e) {}
   if (tab === "enfoque") render();
@@ -760,7 +768,7 @@ function importar(ev) {
       if (!d || typeof d !== "object" || !("ajustes" in d || "sesiones" in d)) throw 0;
       if (!confirm("Esto reemplaza tus datos actuales con los del respaldo. ¿Continuar?")) return;
       D = mezclar(structuredClone(DEFAULTS), d); guardarYa(); aplicarTema(); aplicarRecAgua(); aplicarRecGym(); syncVigilancia();
-      toast("Respaldo importado ✓"); render();
+      toast("Respaldo importado ✓"); syncWidget(); render();
     } catch (e) { toast("Ese archivo no es un respaldo de Modo Bestia."); }
   };
   fr.readAsText(file); ev.target.value = "";
@@ -768,7 +776,7 @@ function importar(ev) {
 ACT.borrarTodo = async () => {
   if (!confirm("¿Borrar TODOS tus datos? No se puede deshacer.")) return;
   if (!confirm("¿Seguro? Te recomiendo exportar un respaldo antes.")) return;
-  D = structuredClone(DEFAULTS); guardarYa(); aplicarTema(); await aplicarRecAgua(); await aplicarRecGym(); await syncVigilancia(); render(); toast("Datos borrados");
+  D = structuredClone(DEFAULTS); guardarYa(); aplicarTema(); await aplicarRecAgua(); await aplicarRecGym(); await syncVigilancia(); syncWidget(); render(); toast("Datos borrados");
 };
 
 // ================= Inputs (delegados) =================
@@ -788,6 +796,8 @@ function onInput(e) {
     case "aguaMeta": a.aguaMeta = Math.max(250, Math.round(num(t.value))); break;
     case "vaso": a.vaso = Math.max(50, Math.round(num(t.value))); break;
     case "limApp": a.pantalla.apps[+t.dataset.i].limit = Math.max(5, Math.round(num(t.value)) || 30); clearTimeout(_tr); _tr = setTimeout(syncVigilancia, 600); break;
+    case "rCustom": { const v = num($("#rNum").value) * num($("#rUni").value); if (v > 0) { nuevo.min = Math.min(MAX_RETO, Math.max(MIN_RETO, v)); document.querySelectorAll("[data-act=rPreset]").forEach(b => b.setAttribute("aria-pressed", "false")); refrescarPreview(); } return; }
+    case "rTit": nuevo.titulo = t.value; return;
     case "gymHora": if (t.value) { a.gymRec.hora = t.value; clearTimeout(_tr); _tr = setTimeout(aplicarRecGym, 600); } break;
   }
   guardar();
@@ -818,12 +828,13 @@ async function alVolver() {
   if (isNative && (tab === "enfoque" || tab === "hoy")) {
     const antes = stState.granted; await refrescarPantalla();
     if (!antes && stState.granted) await syncVigilancia();
-    if (!sheetOpen) { const y = scrollY; render(); scrollTo(0, y); }
   }
+  if (!sheetOpen && ["enfoque", "hoy", "bestia"].includes(tab)) { const y = scrollY; render(); scrollTo(0, y); }
+  programarHabitos(); syncWidget();
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") alVolver(); });
 
-(async function init() {
+window.addEventListener("DOMContentLoaded", async function init() {
   aplicarTema(); ordenarSesiones(); render();
   if (D.pomo.fin) revisarPomo();
   if (isNative) {
@@ -831,4 +842,4 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
     await refrescarPantalla(); await syncVigilancia();
     if (tab === "hoy" || tab === "enfoque") render();
   }
-})();
+});

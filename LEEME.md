@@ -8,7 +8,13 @@ App de Android para gym, nutrición y enfoque. Todo se guarda en tu teléfono.
 - **Gym:** tu rutina Torso/Pierna precargada, peso y reps por serie, "la vez pasada", temporizador de descanso (con notificación), historial y gráfica de progreso con 1RM estimado.
 - **Comida:** diario por desayuno/comida/cena/snacks, base de alimentos mexicanos sin internet, búsqueda en Open Food Facts (por nombre o código de barras), captura manual, 13 recetas fitness con macros, recetas extra de TheMealDB y consejos.
 - **Enfoque:** tiempo en pantalla por app, límites con alertas (ej. Instagram 30 min), Pomodoro 25/5 o 50/10, tareas y hábitos con racha.
-- **Ajustes:** metas de macros (con sugerencia según tu peso), recordatorios de agua, recordatorio de gym por día y hora, tema claro/oscuro, exportar e importar respaldo.
+- **Bestia (nuevo):** tu mascota con nivel y puntos.
+  - **Retos** de 10 min a 2 semanas, máximo 3 a la vez. No se pueden cobrar antes de que se acabe el tiempo. Puntos según la duración (10 min = 10, 1 día ≈ 197, 1 semana ≈ 632, 2 semanas ≈ 961). Notificación cuando el reto está listo y otra a la mitad en retos de 1 día o más.
+  - **Tienda:** accesorios, colores y fondos para la mascota (puedes probarlos antes de comprar).
+  - **Logros:** 14 medallas e historial de puntos.
+  - Puntos extra: hábito +5, meta de agua +10, entrenamiento +25, Pomodoro +5, medalla +25.
+- **Widget:** mantén presionada la pantalla de inicio → Widgets → Modo Bestia. La mascota te recuerda agua, hábitos y retos listos.
+- **Ajustes** (engrane en Hoy): metas de macros (con sugerencia según tu peso), recordatorios de agua, recordatorio de gym por día y hora, tema claro/oscuro, exportar e importar respaldo.
 
 ## Opción A: compilar el APK en la nube con GitHub (sin instalar nada)
 

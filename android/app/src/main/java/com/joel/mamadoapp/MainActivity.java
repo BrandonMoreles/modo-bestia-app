@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(ScreenTimePlugin.class);
+        registerPlugin(PetWidgetPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

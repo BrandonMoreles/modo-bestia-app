@@ -128,3 +128,53 @@ const APPS_COMUNES = [
   {pkg:"com.google.android.youtube", label:"YouTube"},
   {pkg:"com.reddit.frontpage", label:"Reddit"},
 ];
+
+// ================= Mascota, tienda y logros =================
+const COLORES_MASCOTA = {
+  amarillo:{nombre:"Amarillo", cuerpo:"#F2C230", panza:"#FBE39A", borde:"#B98C10"},
+  coral:{nombre:"Coral", cuerpo:"#F2836B", panza:"#F9C3B4", borde:"#B4523C"},
+  menta:{nombre:"Menta", cuerpo:"#5CCB9B", panza:"#BDEBD6", borde:"#2F8C63"},
+  azul:{nombre:"Azul", cuerpo:"#5B9BF0", panza:"#C1D9FA", borde:"#2F64B0"},
+  morado:{nombre:"Morado", cuerpo:"#A47BE0", panza:"#DCCBF4", borde:"#6C46A6"},
+  carbon:{nombre:"Carbón", cuerpo:"#5A6773", panza:"#A9B4BD", borde:"#2E3840"},
+};
+// slot: cabeza | cara | mano | cuerpo | color | fondo
+const TIENDA = [
+  {id:"banda", nombre:"Banda de sudor", slot:"cabeza", precio:60},
+  {id:"gorra", nombre:"Gorra", slot:"cabeza", precio:120},
+  {id:"audifonos", nombre:"Audífonos", slot:"cabeza", precio:350},
+  {id:"corona", nombre:"Corona", slot:"cabeza", precio:1500},
+  {id:"bigote", nombre:"Bigote", slot:"cara", precio:80},
+  {id:"lentes", nombre:"Lentes de sol", slot:"cara", precio:150},
+  {id:"shaker", nombre:"Shaker de proteína", slot:"mano", precio:150},
+  {id:"mancuerna", nombre:"Mancuerna", slot:"mano", precio:200},
+  {id:"playera", nombre:"Tank top", slot:"cuerpo", precio:250},
+  {id:"cadena", nombre:"Cadena de oro", slot:"cuerpo", precio:400},
+  {id:"capa", nombre:"Capa de campeón", slot:"cuerpo", precio:600},
+  {id:"c_coral", nombre:"Color coral", slot:"color", valor:"coral", precio:100},
+  {id:"c_menta", nombre:"Color menta", slot:"color", valor:"menta", precio:100},
+  {id:"c_azul", nombre:"Color azul", slot:"color", valor:"azul", precio:150},
+  {id:"c_morado", nombre:"Color morado", slot:"color", valor:"morado", precio:200},
+  {id:"c_carbon", nombre:"Color carbón", slot:"color", valor:"carbon", precio:300},
+  {id:"f_gym", nombre:"Fondo: gym", slot:"fondo", valor:"gym", precio:200},
+  {id:"f_playa", nombre:"Fondo: playa", slot:"fondo", valor:"playa", precio:300},
+  {id:"f_atardecer", nombre:"Fondo: atardecer", slot:"fondo", valor:"atardecer", precio:350},
+  {id:"f_noche", nombre:"Fondo: noche estrellada", slot:"fondo", valor:"noche", precio:500},
+];
+// test(s) recibe estadísticas calculadas en app.js
+const LOGROS = [
+  {id:"reto1", nombre:"Primer reto", desc:"Completa tu primer reto", test:s=>s.retos>=1},
+  {id:"reto5", nombre:"Retador", desc:"Completa 5 retos", test:s=>s.retos>=5},
+  {id:"reto20", nombre:"Imparable", desc:"Completa 20 retos", test:s=>s.retos>=20},
+  {id:"retoDia", nombre:"Aguante", desc:"Completa un reto de 1 día o más", test:s=>s.retoMax>=1440},
+  {id:"retoSemana", nombre:"Mente de acero", desc:"Completa un reto de 1 semana o más", test:s=>s.retoMax>=10080},
+  {id:"gym1", nombre:"Primer día", desc:"Guarda tu primer entrenamiento", test:s=>s.gym>=1},
+  {id:"gym10", nombre:"Constante", desc:"Guarda 10 entrenamientos", test:s=>s.gym>=10},
+  {id:"gym50", nombre:"Bestia del gym", desc:"Guarda 50 entrenamientos", test:s=>s.gym>=50},
+  {id:"agua7", nombre:"Bien hidratado", desc:"Cumple tu meta de agua 7 días", test:s=>s.aguaDias>=7},
+  {id:"racha7", nombre:"Racha de 7", desc:"Lleva un hábito 7 días seguidos", test:s=>s.rachaMax>=7},
+  {id:"racha30", nombre:"Hábito de hierro", desc:"Lleva un hábito 30 días seguidos", test:s=>s.rachaMax>=30},
+  {id:"compra1", nombre:"De compras", desc:"Compra tu primer accesorio", test:s=>s.inventario>=1},
+  {id:"pts1000", nombre:"Mil puntos", desc:"Gana 1,000 puntos en total", test:s=>s.xp>=1000},
+  {id:"pts5000", nombre:"Leyenda", desc:"Gana 5,000 puntos en total", test:s=>s.xp>=5000},
+];
