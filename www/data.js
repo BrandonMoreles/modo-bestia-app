@@ -1,0 +1,130 @@
+// Datos fijos de la app (todo funciona sin internet)
+
+// [nombre, series, reps, descanso en segundos]
+const RUTINA = {
+  torsoA:{nombre:"Torso A", ej:[
+    ["Press de banca con barra",4,"6–8",150],["Remo con barra",4,"6–8",150],
+    ["Press militar con mancuernas",3,"8–10",120],["Jalón al pecho",3,"8–10",120],
+    ["Press inclinado con mancuernas",3,"10–12",90],["Curl con barra",3,"8–10",90],
+    ["Press francés",3,"8–10",90]]},
+  piernaA:{nombre:"Pierna A", ej:[
+    ["Sentadilla con barra",4,"5–8",180],["Peso muerto rumano",3,"8–10",120],
+    ["Prensa de pierna",3,"10–12",120],["Curl femoral acostado",3,"10–12",90],
+    ["Pantorrilla de pie",4,"10–15",60],["Crunch en polea",3,"12–15",60]]},
+  torsoB:{nombre:"Torso B", ej:[
+    ["Press inclinado con barra",4,"8–10",120],["Dominadas",4,"RIR 1–2",120],
+    ["Remo con mancuerna",3,"10–12",90],["Aperturas en polea",3,"12–15",60],
+    ["Elevaciones laterales",4,"12–20",60],["Face pull",3,"15",60],
+    ["Curl martillo",3,"10–12",60],["Extensión de tríceps en polea",3,"12–15",60]]},
+  piernaB:{nombre:"Pierna B", ej:[
+    ["Peso muerto / hip thrust",4,"6–10",150],["Sentadilla búlgara",3,"8–12",90],
+    ["Extensión de cuádriceps",3,"12–15",60],["Curl femoral sentado",3,"12–15",60],
+    ["Pantorrilla sentado",4,"12–20",60],["Elevación de piernas colgado",3,"10–15",60]]},
+  brazo:{nombre:"Brazo y hombro", ej:[
+    ["Press Arnold",3,"10–12",90],["Elevaciones laterales",4,"15–20",60],
+    ["Pájaros",3,"15",60],["Curl inclinado con mancuernas",3,"10–12",60],
+    ["Fondos",3,"8–12",90],["Curl en polea",3,"12–15",60],
+    ["Extensión sobre la cabeza",3,"12–15",60]]},
+  libre:{nombre:"Libre", ej:[]}
+};
+
+// Valores aproximados por 100 g. porcion = gramos de una porción típica.
+const ALIMENTOS = [
+  {nombre:"Pechuga de pollo cocida", kcal:165, p:31, c:0, g:3.6, porcion:150},
+  {nombre:"Huevo entero (pieza ≈ 50 g)", kcal:143, p:12.6, c:0.7, g:9.5, porcion:50},
+  {nombre:"Claras de huevo", kcal:52, p:10.9, c:0.7, g:0.2, porcion:100},
+  {nombre:"Arroz blanco cocido", kcal:130, p:2.7, c:28, g:0.3, porcion:150},
+  {nombre:"Tortilla de maíz (pieza ≈ 30 g)", kcal:218, p:5.7, c:44.6, g:2.9, porcion:30},
+  {nombre:"Frijoles cocidos", kcal:132, p:8.9, c:23.7, g:0.5, porcion:130},
+  {nombre:"Avena en hojuelas", kcal:389, p:16.9, c:66, g:6.9, porcion:40},
+  {nombre:"Plátano", kcal:89, p:1.1, c:22.8, g:0.3, porcion:120},
+  {nombre:"Manzana", kcal:52, p:0.3, c:13.8, g:0.2, porcion:180},
+  {nombre:"Fresas", kcal:32, p:0.7, c:7.7, g:0.3, porcion:150},
+  {nombre:"Leche entera", kcal:61, p:3.2, c:4.8, g:3.3, porcion:250},
+  {nombre:"Leche descremada", kcal:34, p:3.4, c:5, g:0.1, porcion:250},
+  {nombre:"Atún en agua escurrido", kcal:116, p:25.5, c:0, g:0.8, porcion:100},
+  {nombre:"Aguacate", kcal:160, p:2, c:8.5, g:14.7, porcion:50},
+  {nombre:"Bistec de res magro cocido", kcal:206, p:29, c:0, g:9, porcion:150},
+  {nombre:"Carne molida 90/10 cocida", kcal:217, p:26, c:0, g:11.7, porcion:120},
+  {nombre:"Salmón cocido", kcal:206, p:22, c:0, g:12, porcion:150},
+  {nombre:"Yogur griego natural sin azúcar", kcal:59, p:10.2, c:3.6, g:0.4, porcion:170},
+  {nombre:"Queso panela", kcal:230, p:18, c:3, g:16, porcion:40},
+  {nombre:"Jamón de pavo", kcal:104, p:17, c:2, g:3, porcion:40},
+  {nombre:"Pan integral (rebanada ≈ 30 g)", kcal:247, p:13, c:41, g:3.4, porcion:30},
+  {nombre:"Papa cocida", kcal:87, p:1.9, c:20, g:0.1, porcion:150},
+  {nombre:"Camote cocido", kcal:90, p:2, c:20.7, g:0.2, porcion:150},
+  {nombre:"Pasta cocida", kcal:158, p:5.8, c:31, g:0.9, porcion:150},
+  {nombre:"Brócoli", kcal:35, p:2.4, c:7.2, g:0.4, porcion:100},
+  {nombre:"Proteína whey (scoop ≈ 30 g)", kcal:400, p:80, c:8, g:6, porcion:30},
+  {nombre:"Crema de cacahuate", kcal:588, p:25, c:20, g:50, porcion:16},
+  {nombre:"Almendras", kcal:579, p:21, c:22, g:50, porcion:28},
+  {nombre:"Aceite de oliva", kcal:884, p:0, c:0, g:100, porcion:10},
+  {nombre:"Tostada horneada (pieza ≈ 12 g)", kcal:420, p:9, c:80, g:5, porcion:12},
+];
+
+// Macros aproximados por porción
+const RECETAS = [
+  {nombre:"Avena proteica nocturna", tipo:"Desayuno", min:5, kcal:404, p:38, c:52, g:5,
+   ing:["40 g de avena","1 scoop (30 g) de proteína","200 ml de leche descremada","½ plátano en rodajas","Canela al gusto"],
+   pasos:["Mezcla avena, proteína, leche y canela en un frasco.","Tapa y deja en el refri toda la noche.","En la mañana agrega el plátano y listo."]},
+  {nombre:"Tacos de pollo con frijoles", tipo:"Comida", min:15, kcal:530, p:57, c:55, g:8,
+   ing:["150 g de pechuga de pollo","3 tortillas de maíz","½ taza de frijoles de la olla","Salsa, cebolla y cilantro"],
+   pasos:["Sazona el pollo con sal, ajo y comino y ásalo en sartén.","Deshebra o pica en cubos.","Calienta tortillas, unta frijoles y arma con pollo y salsa."]},
+  {nombre:"Omelette de claras con panela", tipo:"Desayuno", min:10, kcal:300, p:37, c:4, g:13,
+   ing:["200 g de claras","1 huevo entero","50 g de queso panela","Un puño de espinaca"],
+   pasos:["Bate claras con el huevo y una pizca de sal.","Saltea la espinaca 1 min en sartén antiadherente.","Agrega el huevo, cocina a fuego medio, pon la panela y dobla."]},
+  {nombre:"Bowl de atún", tipo:"Comida", min:10, kcal:440, p:41, c:47, g:9,
+   ing:["1 lata de atún en agua","150 g de arroz cocido","50 g de aguacate","Pepino, limón y salsa de soya"],
+   pasos:["Pon el arroz de base.","Encima el atún escurrido, aguacate y pepino en cubos.","Termina con limón y un chorrito de soya."]},
+  {nombre:"Licuado de ganancia", tipo:"Snack", min:3, kcal:660, p:46, c:73, g:23,
+   ing:["300 ml de leche entera","1 scoop de proteína","1 plátano","40 g de avena","1 cda de crema de cacahuate"],
+   pasos:["Todo a la licuadora 30–40 s.","Ideal si te cuesta llegar a tus calorías."]},
+  {nombre:"Yogur griego con fruta y almendras", tipo:"Snack", min:2, kcal:220, p:21, c:17, g:9,
+   ing:["170 g de yogur griego natural","100 g de fresas","15 g de almendras"],
+   pasos:["Sirve el yogur, agrega fruta picada y almendras."]},
+  {nombre:"Huevos a la mexicana con frijoles", tipo:"Desayuno", min:10, kcal:500, p:32, c:56, g:16,
+   ing:["3 huevos","Jitomate, cebolla y chile picados","100 g de frijoles","2 tortillas"],
+   pasos:["Sofríe jitomate, cebolla y chile 2 min.","Agrega los huevos batidos y revuelve.","Sirve con frijoles y tortillas."]},
+  {nombre:"Pollo con camote y brócoli al horno", tipo:"Comida", min:35, kcal:525, p:54, c:52, g:11,
+   ing:["150 g de pechuga","200 g de camote en cubos","150 g de brócoli","1 cdita de aceite de oliva","Paprika, ajo en polvo, sal"],
+   pasos:["Precalienta el horno a 200 °C.","Mezcla todo con el aceite y especias en una charola.","Hornea 25–30 min volteando a la mitad."]},
+  {nombre:"Pasta con carne molida", tipo:"Comida", min:20, kcal:527, p:41, c:52, g:16,
+   ing:["150 g de pasta cocida","120 g de carne molida 90/10","100 g de salsa de tomate","Ajo, orégano"],
+   pasos:["Dora la carne con ajo.","Agrega salsa y orégano, cocina 5 min.","Mezcla con la pasta."]},
+  {nombre:"Tostadas de atún", tipo:"Snack", min:5, kcal:280, p:38, c:24, g:2,
+   ing:["2 tostadas horneadas","1 lata de atún en agua","Pico de gallo","Limón y salsa"],
+   pasos:["Mezcla atún con pico de gallo y limón.","Sirve sobre las tostadas."]},
+  {nombre:"Rollitos de pavo y panela", tipo:"Snack", min:3, kcal:155, p:17, c:2, g:8,
+   ing:["60 g de jamón de pavo","40 g de queso panela en tiras"],
+   pasos:["Enrolla cada tira de panela con una rebanada de pavo."]},
+  {nombre:"Plátano con crema de cacahuate", tipo:"Snack", min:1, kcal:200, p:5, c:30, g:8,
+   ing:["1 plátano","1 cda de crema de cacahuate"],
+   pasos:["Rebana y unta. Buen pre-entreno 1 h antes."]},
+  {nombre:"Hot cakes de avena y plátano", tipo:"Desayuno", min:15, kcal:315, p:21, c:41, g:8,
+   ing:["40 g de avena","1 huevo + 2 claras","½ plátano","Canela y polvo para hornear"],
+   pasos:["Licúa todo hasta tener una mezcla espesa.","Cocina en sartén antiadherente a fuego medio-bajo.","Voltea cuando salgan burbujas."]},
+];
+
+const CONSEJOS = [
+  "Pon proteína en cada comida: es más fácil llegar a tu meta repartida en 3–5 tomas que en una sola.",
+  "Un licuado con leche, avena, plátano y crema de cacahuate es la forma más fácil de sumar calorías si te cuesta comer.",
+  "Come algo con carbohidratos y proteína 1–2 horas antes de entrenar: rinde más la sesión.",
+  "La creatina monohidratada (3–5 g diarios) es el suplemento con más evidencia; no necesitas fase de carga.",
+  "Prepara pollo, arroz y frijoles para 3 días el domingo. Si ya está hecho, no te sales del plan.",
+  "Ten snacks fáciles a la mano: yogur griego, atún, huevos cocidos, fruta, almendras.",
+  "Si en 3–4 semanas tu peso no cambia nada, sube unas 200–300 kcal al día.",
+  "Las verduras no estorban para crecer: dan fibra y micronutrientes, solo cuida no llenarte tanto que no te alcance para lo demás.",
+  "Tomar agua seguido mejora el rendimiento; si tu orina es muy oscura, te falta.",
+  "Dormir 7–9 horas pesa tanto como la dieta para ganar músculo.",
+  "No necesitas comer 'limpio' al 100 %. Si 80–90 % de lo que comes es comida real, vas bien.",
+  "Las tortillas, el arroz y los frijoles son buenos aliados: carbos baratos y llenadores para entrenar fuerte.",
+];
+
+const APPS_COMUNES = [
+  {pkg:"com.instagram.android", label:"Instagram"},
+  {pkg:"com.zhiliaoapp.musically", label:"TikTok"},
+  {pkg:"com.facebook.katana", label:"Facebook"},
+  {pkg:"com.twitter.android", label:"X"},
+  {pkg:"com.google.android.youtube", label:"YouTube"},
+  {pkg:"com.reddit.frontpage", label:"Reddit"},
+];

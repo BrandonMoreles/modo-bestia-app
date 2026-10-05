@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Modo Bestia</string>
+    <string name="title_activity_main">Modo Bestia</string>
+    <string name="package_name">com.joel.mamadoapp</string>
+    <string name="custom_url_scheme">com.joel.mamadoapp</string>
+</resources>
