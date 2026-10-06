@@ -36,14 +36,15 @@ const DEFAULTS = {
   habLog: {}, enfoqueLog: {},
   pomo: {modo: 25, fase: "enfoque", fin: null, resta: null},
   retos: [], retoN: 0, puntos: {saldo: 0, xp: 0, log: []}, otorgados: {}, logros: {}, rachaRecord: 0,
-  mascota: {nombre: "Bestia", color: "amarillo", fondo: "ninguno", equipo: {cabeza: null, cara: null, mano: null, cuerpo: null}, inventario: []},
+  mascota: {nombre: "Bestia", especie: "monstruo", color: "original", fondo: "ninguno", equipo: {cabeza: null, cara: null, mano: null, cuerpo: null}, inventario: []},
   ajustes: {
     peso: "", metas: {kcal: 2800, p: 150, c: 340, g: 80},
     aguaMeta: 3000, vaso: 250,
     aguaRec: {on: false, desde: 8, hasta: 22, cada: 2},
     gymRec: {on: false, hora: "18:00", dias: [1, 2, 4, 5]},
     pantalla: {on: false, apps: [{pkg: "com.instagram.android", label: "Instagram", limit: 30}]},
-    tema: "auto"
+    tema: "auto",
+    mascota: {notif: false, flotante: false, cada: 60}
   }
 };
 function cargar() {
@@ -707,6 +708,7 @@ async function aplicarRecGym() {
 // ================= AJUSTES =================
 const DIAS = ["D", "L", "M", "Mi", "J", "V", "S"];
 function vAjustes() {
+  if (isNative && D.ajustes.mascota.flotante && flotPermiso === null) revisarFlotante().then(() => { if (tab === "ajustes") keepScroll(() => {}); });
   const a = D.ajustes, m = a.metas;
   const horas = (sel) => Array.from({length: 24}, (_, h) => `<option value="${h}" ${h === sel ? "selected" : ""}>${h}:00</option>`).join("");
   view().innerHTML = `<h1>Ajustes</h1><p class="sub">Todo se guarda solo en tu teléfono.</p>
@@ -728,6 +730,16 @@ function vAjustes() {
       <div class="switch"><label for="swGym"><b>Avisarme los días de entreno</b></label><input type="checkbox" id="swGym" data-in="swGym" ${a.gymRec.on ? "checked" : ""}></div>
       <div class="seg" style="margin-top:6px">${DIAS.map((d, i) => `<button class="chip" aria-pressed="${a.gymRec.dias.includes(i)}" data-act="gymDia" data-d="${i}">${d}</button>`).join("")}</div>
       <label class="f" for="gHora">Hora</label><input id="gHora" type="time" value="${esc(a.gymRec.hora)}" data-in="gymHora" style="max-width:160px">
+    </section>
+    <section class="card"><h2>Mascota</h2>
+      <div class="switch"><label for="swPetN"><b>Notificación persistente</b><br><span class="muted small">Tu mascota fija en las notificaciones con su recordatorio del momento</span></label><input type="checkbox" id="swPetN" data-in="swPetN" ${a.mascota.notif ? "checked" : ""}></div>
+      <div class="switch" style="margin-top:6px"><label for="swFlot"><b>Mascota flotante</b><br><span class="muted small">Aparece unos segundos encima de otras apps para recordarte algo, y se va</span></label><input type="checkbox" id="swFlot" data-in="swFlot" ${a.mascota.flotante ? "checked" : ""}></div>
+      ${a.mascota.flotante ? `
+        ${isNative && flotPermiso === false ? `<p class="small" style="margin:8px 0">Android necesita el permiso <b>Mostrar sobre otras apps</b>.</p><button class="btn primary block" data-act="permFlot">Dar permiso</button>` : ""}
+        <label class="f" for="flotCada">Aparece como máximo</label>
+        <select id="flotCada" data-in="flotCada">${[[30, "cada 30 min"], [60, "cada hora"], [120, "cada 2 horas"], [180, "cada 3 horas"]].map(([v, l]) => `<option value="${v}" ${a.mascota.cada === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <p class="muted small" style="margin:6px 0 10px">Solo sale si tiene algo que recordarte (agua, hábitos, gym, un reto listo) y entre 9 am y 10 pm. Si pasas tu límite en Instagram, sale en ese momento.</p>
+        <button class="btn block" data-act="probarFlot">Probar ahora</button>` : ""}
     </section>
     <section class="card"><h2>Apariencia</h2>
       <div class="seg" style="margin:8px 0 0">${[["auto", "Automático"], ["light", "Claro"], ["dark", "Oscuro"]].map(([k, l]) => `<button class="chip" aria-pressed="${a.tema === k}" data-act="tema" data-k="${k}">${l}</button>`).join("")}</div>
@@ -810,6 +822,9 @@ async function onChange(e) {
   else if (k === "swGym") { a.gymRec.on = t.checked; guardar(); await aplicarRecGym(); }
   else if (k === "swPant") { a.pantalla.on = t.checked; guardar(); if (t.checked) await permisoNotif(); await syncVigilancia(); if (t.checked) toast("Alertas activadas"); }
   else if (k === "progEj") { progEj = t.value; render(); }
+  else if (k === "swPetN") { a.mascota.notif = t.checked; guardar(); if (t.checked) await permisoNotif(); syncWidget(); if (t.checked && isNative) toast("Listo, tu mascota está en tus notificaciones"); }
+  else if (k === "swFlot") { a.mascota.flotante = t.checked; guardar(); if (t.checked) await revisarFlotante(); syncWidget(); keepScroll(() => {}); }
+  else if (k === "flotCada") { a.mascota.cada = +t.value; guardar(); syncWidget(); }
 }
 ["view", "sheet"].forEach(id => { const el = document.getElementById(id); el.addEventListener("input", onInput); el.addEventListener("change", onChange); });
 document.addEventListener("keydown", e => {
@@ -829,7 +844,8 @@ async function alVolver() {
     const antes = stState.granted; await refrescarPantalla();
     if (!antes && stState.granted) await syncVigilancia();
   }
-  if (!sheetOpen && ["enfoque", "hoy", "bestia"].includes(tab)) { const y = scrollY; render(); scrollTo(0, y); }
+  if (tab === "ajustes" && D.ajustes.mascota.flotante) { await revisarFlotante(); }
+  if (!sheetOpen && ["enfoque", "hoy", "bestia", "ajustes"].includes(tab)) { const y = scrollY; render(); scrollTo(0, y); }
   programarHabitos(); syncWidget();
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") alVolver(); });

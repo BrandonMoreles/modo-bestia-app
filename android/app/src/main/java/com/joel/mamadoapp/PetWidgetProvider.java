@@ -28,6 +28,7 @@ public class PetWidgetProvider extends AppWidgetProvider {
     }
 
     public static void refreshAll(Context ctx) {
+        try { PetCompanion.updateNotification(ctx); } catch (Exception ignored) { }
         AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
         int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, PetWidgetProvider.class));
         if (ids == null || ids.length == 0) return;
@@ -35,8 +36,9 @@ public class PetWidgetProvider extends AppWidgetProvider {
         for (int id : ids) mgr.updateAppWidget(id, rv);
     }
 
-    static String mensajeActual(SharedPreferences sp) {
-        String msg = "Abre Modo Bestia para despertarme.";
+    /** La entrada de la agenda que toca ahora (la más reciente que ya empezó). */
+    static JSONObject entradaActual(SharedPreferences sp) {
+        JSONObject elegida = null;
         try {
             JSONArray agenda = new JSONArray(sp.getString("agenda", "[]"));
             long now = System.currentTimeMillis();
@@ -46,11 +48,16 @@ public class PetWidgetProvider extends AppWidgetProvider {
                 long t = o.optLong("t", 0);
                 if (t <= now && t >= mejor) {
                     mejor = t;
-                    msg = o.optString("msg", msg);
+                    elegida = o;
                 }
             }
         } catch (Exception ignored) { }
-        return msg;
+        return elegida;
+    }
+
+    static String mensajeActual(SharedPreferences sp) {
+        JSONObject o = entradaActual(sp);
+        return o == null ? "Abre Modo Bestia para despertarme." : o.optString("msg", "Abre Modo Bestia para despertarme.");
     }
 
     static RemoteViews build(Context ctx) {

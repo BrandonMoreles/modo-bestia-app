@@ -59,11 +59,15 @@ let petSeq = 0, petReaccion = 0;
 
 /* La mascota está armada como un esqueleto: cuerpo, brazos y cabeza son grupos.
    Cada accesorio vive DENTRO de la parte que lo carga (la gorra en la cabeza, la pesa en la mano),
-   así se mueve con ella. La ropa se recorta a la silueta y todo comparte la misma luz y contorno. */
+   así se mueve con ella. Cuernos, orejas y branquias salen de DETRÁS de la cabeza, para que nazcan de ella.
+   Todas las especies comparten el mismo esqueleto, por eso todos los accesorios les quedan. */
 function petSVG(o = {}) {
   const m = D.mascota;
   const eq = o.equipo || m.equipo;
-  const col = COLORES_MASCOTA[o.color || m.color] || COLORES_MASCOTA.amarillo;
+  const especie = o.especie || m.especie || "monstruo";
+  const ES = ESPECIES[especie] || ESPECIES.monstruo;
+  const colorId = o.color || m.color;
+  const col = (colorId && colorId !== "original" && colorId !== "amarillo" && COLORES_MASCOTA[colorId]) || ES.colores;
   const fondo = o.fondo !== undefined ? o.fondo : m.fondo;
   const animo = o.animo || animoMascota();
   const u = "p" + (++petSeq);
@@ -71,6 +75,9 @@ function petSVG(o = {}) {
   const piel = col.cuerpo, panza = col.panza, cuerno = mezc(col.panza, "#ffffff", .35);
   const lin = (id, a, b) => `<linearGradient id="${u}${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
   const ref = id => `url(#${u}${id})`;
+  const conSombrero = eq.cabeza === "gorra" || eq.cabeza === "corona";
+  const hocico = especie === "gorila" || especie === "xolo";
+  const dy = hocico ? 7 : 0; // la boca baja al hocico
 
   const defs = `<defs>
     <radialGradient id="${u}luz" cx=".34" cy=".26" r=".85">
@@ -82,7 +89,7 @@ function petSVG(o = {}) {
     <clipPath id="${u}cabx"><circle cx="100" cy="84" r="52"/></clipPath>
     ${lin("roja", "#E8605A", "#A9312C")}${lin("azul", "#4F86D9", "#23498A")}${lin("oro", "#FFE07A", "#C9921A")}
     ${lin("metal", "#9AA6AF", "#4C5862")}${lin("negro", "#3A4650", "#11181D")}${lin("vidrio", "#3D5566", "#0E161C")}
-    ${lin("capa", "#C8423B", "#7E211D")}${lin("cielo", "#ff8a5c", "#ffd27a")}
+    ${lin("capa", "#C8423B", "#7E211D")}${lin("cielo", "#ff8a5c", "#ffd27a")}${lin("cuerno", cuerno, mezc(cuerno, L, .35))}
   </defs>`;
 
   const fondos = {
@@ -91,28 +98,74 @@ function petSVG(o = {}) {
     atardecer: `<rect width="200" height="200" rx="28" fill="${ref("cielo")}"/><circle cx="100" cy="168" r="44" fill="#fff1b8" opacity=".6"/>`,
     noche: `<rect width="200" height="200" rx="28" fill="#1b2440"/><circle cx="160" cy="38" r="13" fill="#f4f1d0"/><circle cx="154" cy="34" r="12" fill="#1b2440"/>${[[30, 30], [60, 55], [104, 20], [24, 96], [178, 104], [126, 58]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#fff"/>`).join("")}`,
   };
+  const espejo = d => d; // (las piezas simétricas se dibujan con transform)
+  const par = g => `${g}<g transform="matrix(-1 0 0 1 200 0)">${g}</g>`;
+
+  // ---------- Partes propias de cada especie ----------
+  const SP = {
+    monstruo: {
+      // cuerno de toro: su base está DENTRO de la cabeza y la cabeza se dibuja encima
+      atras: par(`<path d="M86 46Q80 38 70 37 56 34 49 20q-6 10 0 22 8 14 25 20z" fill="${ref("cuerno")}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
+        <path d="M57 32q4 6 1 11M52 25q4 4 1 8" stroke="${L}" stroke-width="1.8" fill="none" opacity=".45" stroke-linecap="round"/>`),
+      caraPiel: `<ellipse cx="100" cy="112" rx="34" ry="20" fill="${panza}" opacity=".55"/>`,
+      encima: conSombrero ? "" : `<path d="M86 38q0-15 10-12 4-11 10-1 10-3 8 13" fill="${piel}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>`,
+      brazo: [10.5, 19],
+    },
+    gorila: {
+      atras: `<ellipse cx="100" cy="38" rx="20" ry="12" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>` + par(`<circle cx="51" cy="88" r="10" fill="${panza}" stroke="${L}" stroke-width="${SW}"/><circle cx="51" cy="88" r="4.5" fill="${mezc(panza, L, .35)}"/>`),
+      caraPiel: `<path d="M62 82q38-22 76 0 6 26-14 42-24 10-48 0-20-16-14-42z" fill="${panza}"/>
+        <ellipse cx="100" cy="108" rx="24" ry="15" fill="${mezc(panza, "#ffffff", .12)}" stroke="${mezc(panza, L, .4)}" stroke-width="2"/>`,
+      encima: `<path d="M64 77q36-16 72 0-4 6-10 4-26-8-52 0-6 2-10-4z" fill="${mezc(piel, "#000000", .25)}"/>
+        <ellipse cx="95" cy="100" rx="3.2" ry="2.4" fill="${ink}"/><ellipse cx="105" cy="100" rx="3.2" ry="2.4" fill="${ink}"/>`,
+      pecho: `<path d="M74 130q13 10 26 0 13 10 26 0" stroke="${mezc(panza, L, .4)}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+      brazo: [13, 22],
+    },
+    ajolote: {
+      atras: par(`<g stroke-linecap="round" fill="none">
+          <path d="M60 66Q44 58 32 48M56 84Q40 84 26 82M60 102Q44 110 34 122" stroke="${L}" stroke-width="10"/>
+          <path d="M60 66Q44 58 32 48M56 84Q40 84 26 82M60 102Q44 110 34 122" stroke="${mezc(piel, "#D9306A", .45)}" stroke-width="6"/>
+          <path d="M46 58l-2 6M38 52l-3 5M44 83l-1 6M34 82l-1 6M46 108l-4 4M38 114l-4 4" stroke="${mezc(piel, "#D9306A", .6)}" stroke-width="3"/></g>`),
+      caraPiel: `<ellipse cx="100" cy="112" rx="36" ry="18" fill="${panza}" opacity=".6"/>`,
+      encima: `<circle cx="70" cy="64" r="2.5" fill="${L}" opacity=".35"/><circle cx="128" cy="58" r="3" fill="${L}" opacity=".3"/><circle cx="136" cy="70" r="2" fill="${L}" opacity=".3"/>`,
+      cola: `<path d="M128 168q34 6 54-22 6 18-6 34-20 18-50 6z" fill="${piel}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/><path d="M150 168q18-4 28-18" stroke="${mezc(piel, "#ffffff", .4)}" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+      brazo: [10, 17],
+    },
+    xolo: {
+      atras: par(`<path d="M82 46Q60 30 50 6q-12 26 0 56z" fill="${piel}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/><path d="M74 44Q60 32 54 18q-6 18 0 36z" fill="#C98A8A" opacity=".75"/>`),
+      caraPiel: `<ellipse cx="100" cy="106" rx="23" ry="16" fill="${mezc(panza, "#ffffff", .2)}" stroke="${mezc(panza, L, .45)}" stroke-width="2"/>`,
+      encima: `<path d="M90 66q10-5 20 0M92 72q8-4 16 0" stroke="${L}" stroke-width="2" fill="none" opacity=".45" stroke-linecap="round"/>
+        <path d="M94 96q6-4 12 0-1 6-6 7-5-1-6-7z" fill="${ink}"/><ellipse cx="98" cy="97" rx="2" ry="1.2" fill="#fff" opacity=".5"/>
+        ${conSombrero ? "" : `<path d="M90 38l3-14 5 10 4-14 4 13 5-9 1 15" fill="#2a2f35" stroke="#2a2f35" stroke-width="2" stroke-linejoin="round"/>`}`,
+      cola: `<path d="M134 170q30-4 40-34" stroke="${L}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M134 170q30-4 40-34" stroke="${piel}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+      brazo: [10.5, 19],
+    },
+  }[especie] || {};
 
   // ---------- Ojos y boca ----------
+  const ojoR = especie === "ajolote" ? 5.5 : 7;
   const ojos = animo === "feliz"
     ? `<path d="M73 88q9-11 18 0M109 88q9-11 18 0" stroke="${ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`
-    : `<g class="p-parp"><ellipse cx="82" cy="85" rx="7" ry="${animo === "triste" ? 6 : 8}" fill="${ink}"/><ellipse cx="118" cy="85" rx="7" ry="${animo === "triste" ? 6 : 8}" fill="${ink}"/>
+    : `<g class="p-parp"><ellipse cx="82" cy="85" rx="${ojoR}" ry="${animo === "triste" ? ojoR - 1 : ojoR + 1}" fill="${ink}"/><ellipse cx="118" cy="85" rx="${ojoR}" ry="${animo === "triste" ? ojoR - 1 : ojoR + 1}" fill="${ink}"/>
        <circle cx="84.5" cy="81.5" r="2.4" fill="#fff"/><circle cx="120.5" cy="81.5" r="2.4" fill="#fff"/></g>
        ${animo === "triste" ? `<path d="M73 76l15-5M127 76l-15-5" stroke="${ink}" stroke-width="3.5" stroke-linecap="round"/>` : ""}`;
-  const boca = animo === "feliz"
-    ? `<path d="M89 101q11 13 22 0z" fill="#B8423C" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/><path d="M94 106q6 4 12 0" stroke="#F28B82" stroke-width="3" stroke-linecap="round" fill="none"/>`
-    : animo === "triste" ? `<path d="M91 108q9-8 18 0" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
-      : `<path d="M92 103q8 6 16 0" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
-  const colmillo = animo === "triste" ? "" : `<path d="M${animo === "feliz" ? "102 101.5l2.5 5 2.5-5.5" : "103 105.5l2 4.5 2.4-5.4"}z" fill="#fff" stroke="${ink}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  const boca = especie === "ajolote" && animo !== "triste"
+    ? `<path d="M82 101q18 ${animo === "feliz" ? 14 : 9} 36 0" stroke="${ink}" stroke-width="3.5" fill="${animo === "feliz" ? "#B8423C" : "none"}" stroke-linecap="round" stroke-linejoin="round"/>`
+    : animo === "feliz"
+      ? `<path d="M89 101q11 13 22 0z" fill="#B8423C" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/><path d="M94 106q6 4 12 0" stroke="#F28B82" stroke-width="3" stroke-linecap="round" fill="none"/>`
+      : animo === "triste" ? `<path d="M91 108q9-8 18 0" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
+        : especie === "xolo" ? `<path d="M92 103q4 4 8 0 4 4 8 0" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/>`
+          : `<path d="M92 103q8 6 16 0" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+  const colmillo = especie !== "monstruo" || animo === "triste" ? "" : `<path d="M${animo === "feliz" ? "102 101.5l2.5 5 2.5-5.5" : "103 105.5l2 4.5 2.4-5.4"}z" fill="#fff" stroke="${ink}" stroke-width="1.4" stroke-linejoin="round"/>`;
 
-  // ---------- Accesorios por parte del cuerpo ----------
+  // ---------- Accesorios ----------
   const cabezaAtras = {
     audifonos: `<rect x="40" y="72" width="16" height="30" rx="7" fill="${ref("roja")}" stroke="${L}" stroke-width="${SW}"/><rect x="144" y="72" width="16" height="30" rx="7" fill="${ref("roja")}" stroke="${L}" stroke-width="${SW}"/>`,
   };
-  const cabezaPiel = { // se recorta a la cabeza: se "enreda" en la silueta
-    banda: `<path d="M44 60q56-22 112 0v15q-56-20-112 0z" fill="${ref("roja")}"/><path d="M44 66q56-21 112 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".75"/><path d="M44 75q56-20 112 0" stroke="${mezc("#A9312C", "#000", .2)}" stroke-width="2" fill="none" opacity=".6"/>`,
+  const cabezaPiel = {
+    banda: `<path d="M44 58q56-22 112 0v14q-56-20-112 0z" fill="${ref("roja")}"/><path d="M44 64q56-21 112 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".75"/><path d="M44 72q56-20 112 0" stroke="#7d1f1b" stroke-width="2" fill="none" opacity=".5"/>`,
   };
   const cabezaFrente = {
-    banda: `<path d="M148 62q16-2 20 8-10 0-16 4z" fill="${ref("roja")}" stroke="${L}" stroke-width="2"/><path d="M150 68q14 6 14 16-8-6-15-6z" fill="${ref("roja")}" stroke="${L}" stroke-width="2"/>`,
+    banda: `<path d="M148 60q16-2 20 8-10 0-16 4z" fill="${ref("roja")}" stroke="${L}" stroke-width="2"/><path d="M150 66q14 6 14 16-8-6-15-6z" fill="${ref("roja")}" stroke="${L}" stroke-width="2"/>`,
     gorra: `<path d="M50 70A51 51 0 0 1 150 70q-50-14-100 0z" fill="${ref("azul")}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
       <path d="M100 33v28M72 44q14 8 16 22M128 44q-14 8-16 22" stroke="#1d3d73" stroke-width="2" fill="none" opacity=".7"/>
       <path d="M50 70q50-14 100 0q-6 12-50 12t-50-12z" fill="#23498A" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
@@ -132,14 +185,14 @@ function petSVG(o = {}) {
       <path d="M72 82l7-3M108 82l7-3" stroke="#fff" stroke-width="2.2" opacity=".55" stroke-linecap="round"/>`,
     bigote: `<path d="M100 98q-6-6-14-3-6 3-9 9 8-3 13-1 6 1 10-5 4 6 10 5 5-2 13 1-3-6-9-9-8-3-14 3z" fill="#5a3a22" stroke="#3b2414" stroke-width="1.5" stroke-linejoin="round"/>`,
   };
-  const enMano = { // vive dentro del brazo derecho
+  const enMano = {
     mancuerna: `<rect x="132" y="162" width="36" height="5" rx="2" fill="${ref("metal")}" stroke="${L}" stroke-width="1.5"/>
       <rect x="127" y="152" width="9" height="25" rx="2.5" fill="${ref("negro")}" stroke="${L}" stroke-width="2"/><rect x="164" y="152" width="9" height="25" rx="2.5" fill="${ref("negro")}" stroke="${L}" stroke-width="2"/>`,
     shaker: `<path d="M141 138h20l-2 34h-16z" fill="#eef2f5" stroke="${L}" stroke-width="2.5" stroke-linejoin="round"/>
       <path d="M143.5 154h15l-1 16h-13z" fill="#c49a6c"/><rect x="140" y="131" width="22" height="9" rx="3" fill="${ref("azul")}" stroke="${L}" stroke-width="2.5"/>
       <path d="M145 142v26" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/>`,
   };
-  const ropa = { // se recorta al cuerpo: queda "puesta"
+  const ropa = {
     playera: `<path d="M50 200V120q16-6 28-6 6 18 22 18t22-18q12 0 28 6v80z" fill="${ref("roja")}"/>
       <path d="M78 114q6 18 22 18t22-18" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>
       <path d="M86 150h28M88 158h24" stroke="#fff" stroke-width="3" opacity=".25" stroke-linecap="round"/>`,
@@ -151,27 +204,30 @@ function petSVG(o = {}) {
   const tiene = (slot, id) => eq[slot] === id;
   const capaOn = tiene("cuerpo", "capa");
   const item = eq.mano && enMano[eq.mano] ? enMano[eq.mano] : "";
+  const [brx, bry] = SP.brazo || [10.5, 19];
 
   const brazo = (lado) => {
     const izq = lado === "izq";
     const cx = izq ? 56 : 144, rot = izq ? 18 : -18;
     const mano = izq ? "" : (item ? `${item}<circle cx="150" cy="164.5" r="7.5" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>` : "");
-    return `<g class="p-b${lado}"><ellipse cx="${cx}" cy="148" rx="10.5" ry="19" fill="${piel}" stroke="${L}" stroke-width="${SW}" transform="rotate(${rot} ${cx} 148)"/>
-      <ellipse cx="${cx}" cy="148" rx="10.5" ry="19" fill="url(#${u}luz)" transform="rotate(${rot} ${cx} 148)"/>${mano}</g>`;
+    return `<g class="p-b${lado}"><ellipse cx="${cx}" cy="148" rx="${brx}" ry="${bry}" fill="${piel}" stroke="${L}" stroke-width="${SW}" transform="rotate(${rot} ${cx} 148)"/>
+      <ellipse cx="${cx}" cy="148" rx="${brx}" ry="${bry}" fill="url(#${u}luz)" transform="rotate(${rot} ${cx} 148)"/>${mano}</g>`;
   };
 
-  const clases = ["pet", "animo-" + animo, item ? "con-" + eq.mano : "", capaOn ? "con-capa" : "", Date.now() - petReaccion < 900 ? "salta" : ""].join(" ");
+  const clases = ["pet", "esp-" + especie, "animo-" + animo, item ? "con-" + eq.mano : "", capaOn ? "con-capa" : "", Date.now() - petReaccion < 900 ? "salta" : ""].join(" ");
   return `<svg class="${clases}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">${defs}
     ${fondos[fondo] || ""}
     <ellipse class="p-sombra" cx="100" cy="192" rx="46" ry="6" fill="#000" opacity=".18"/>
     <g class="p-todo">
       <g class="p-cuerpo">
         ${capaOn ? `<g class="p-capa"><path d="M64 122q-24 44-18 70 54 10 108 0 6-26-18-70z" fill="${ref("capa")}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/><path d="M76 140q-8 26-6 48M124 140q8 26 6 48" stroke="#5f1814" stroke-width="2" fill="none" opacity=".5"/></g>` : ""}
+        ${SP.cola ? `<g class="p-cola">${SP.cola}</g>` : ""}
         <ellipse cx="82" cy="186" rx="15" ry="8" fill="${mezc(piel, L, .35)}" stroke="${L}" stroke-width="${SW}"/>
         <ellipse cx="118" cy="186" rx="15" ry="8" fill="${mezc(piel, L, .35)}" stroke="${L}" stroke-width="${SW}"/>
         <ellipse cx="100" cy="150" rx="46" ry="38" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>
         <g clip-path="url(#${u}cc)">
           <ellipse cx="100" cy="162" rx="28" ry="24" fill="${panza}"/>
+          ${SP.pecho || ""}
           ${eq.cuerpo && ropa[eq.cuerpo] ? ropa[eq.cuerpo] : ""}
         </g>
         <g clip-path="url(#${u}ccx)"><rect x="40" y="100" width="120" height="100" fill="url(#${u}luz)"/></g>
@@ -181,20 +237,20 @@ function petSVG(o = {}) {
       </g>
       <g class="p-cabeza">
         ${eq.cabeza && cabezaAtras[eq.cabeza] ? cabezaAtras[eq.cabeza] : ""}
+        <g class="p-orejas">${SP.atras || ""}</g>
         <circle cx="100" cy="84" r="50" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>
         <g clip-path="url(#${u}cab)">
-          <ellipse cx="100" cy="112" rx="34" ry="20" fill="${panza}" opacity=".55"/>
+          ${SP.caraPiel || ""}
           ${eq.cabeza && cabezaPiel[eq.cabeza] ? cabezaPiel[eq.cabeza] : ""}
         </g>
         ${tiene("cabeza", "gorra") ? cabezaFrente.gorra : ""}
         <g clip-path="url(#${u}cabx)"><rect x="46" y="30" width="108" height="108" fill="url(#${u}luz)"/></g>
-        <path d="M70 47q-20 2-26-16 2-6 6-2 6 8 22 7z" fill="${cuerno}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
-        <path d="M130 47q20 2 26-16-2-6-6-2-6 8-22 7z" fill="${cuerno}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
-        ${eq.cabeza === "gorra" || eq.cabeza === "corona" ? "" : `<path d="M88 37q2-14 10-10 2-10 9-2 8-4 6 10" fill="${piel}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>`}
+        ${SP.encima || ""}
         ${eq.cabeza && eq.cabeza !== "gorra" && cabezaFrente[eq.cabeza] ? cabezaFrente[eq.cabeza] : ""}
         <ellipse cx="68" cy="99" rx="7" ry="4.5" fill="${mezc(piel, "#E0607E", .45)}" opacity=".55"/><ellipse cx="132" cy="99" rx="7" ry="4.5" fill="${mezc(piel, "#E0607E", .45)}" opacity=".55"/>
-        ${tiene("cara", "lentes") ? "" : ojos}${boca}${tiene("cara", "bigote") ? "" : colmillo}
-        ${eq.cara && cara[eq.cara] ? cara[eq.cara] : ""}
+        ${tiene("cara", "lentes") ? "" : ojos}
+        <g transform="translate(0 ${dy})">${boca}${tiene("cara", "bigote") ? "" : colmillo}${tiene("cara", "bigote") ? cara.bigote : ""}</g>
+        ${tiene("cara", "lentes") ? cara.lentes : ""}
       </g>
     </g>
     <g class="p-fx" fill="#F2C230" stroke="${L}" stroke-width="1.5">
@@ -352,15 +408,17 @@ ACT.fallido = el => { if (!confirm("¿Marcarlo como no logrado? No ganas puntos,
 ACT.abandonar = el => { if (!confirm("¿Abandonar el reto? Pierdes los puntos de este reto.")) return; if (cerrarReto(el.dataset.id, "abandonado")) { guardarYa(); syncWidget(); render(); } };
 
 // ---- Tienda ----
-const SLOTS = [["cabeza", "Cabeza"], ["cara", "Cara"], ["mano", "En la mano"], ["cuerpo", "Cuerpo"], ["color", "Colores"], ["fondo", "Fondos"]];
+const SLOTS = [["especie", "Mascotas"], ["cabeza", "Cabeza"], ["cara", "Cara"], ["mano", "En la mano"], ["cuerpo", "Cuerpo"], ["color", "Colores"], ["fondo", "Fondos"]];
 function equipado(it) {
   const m = D.mascota;
+  if (it.slot === "especie") return (m.especie || "monstruo") === it.valor;
   if (it.slot === "color") return m.color === it.valor;
   if (it.slot === "fondo") return m.fondo === it.valor;
   return m.equipo[it.slot] === it.id;
 }
 function probarEquipo(id) {
   const it = TIENDA.find(t => t.id === id); const m = D.mascota;
+  if (it.slot === "especie") return {especie: it.valor};
   if (it.slot === "color") return {color: it.valor};
   if (it.slot === "fondo") return {fondo: it.valor};
   return {equipo: {...m.equipo, [it.slot]: it.id}};
@@ -368,15 +426,16 @@ function probarEquipo(id) {
 function bTienda(head) {
   const inv = D.mascota.inventario;
   view().innerHTML = head + SLOTS.map(([s, l]) => `<section class="card" style="padding:6px 14px"><h2 style="margin:8px 0 2px">${l}</h2>
-    ${s === "color" ? `<div class="li"><div class="row"><span class="sw" style="background:${COLORES_MASCOTA.amarillo.cuerpo}"></span><span class="t">Amarillo (original)</span></div>${D.mascota.color === "amarillo" ? `<span class="pill">En uso</span>` : `<button class="btn" data-act="usarBase" data-k="color">Usar</button>`}</div>` : ""}
+    ${s === "especie" ? `<div class="li"><span class="t">Monstruo (el original)</span>${(D.mascota.especie || "monstruo") === "monstruo" ? `<span class="pill">Contigo</span>` : `<button class="btn" data-act="usarBase" data-k="especie">Elegir</button>`}</div>` : ""}
+    ${s === "color" ? `<div class="li"><div class="row"><span class="sw" style="background:${(ESPECIES[D.mascota.especie || "monstruo"]).colores.cuerpo}"></span><span class="t">Color original</span></div>${colorOriginal() ? `<span class="pill">En uso</span>` : `<button class="btn" data-act="usarBase" data-k="color">Usar</button>`}</div>` : ""}
     ${s === "fondo" ? `<div class="li"><span class="t">Sin fondo</span>${D.mascota.fondo === "ninguno" ? `<span class="pill">En uso</span>` : `<button class="btn" data-act="usarBase" data-k="fondo">Usar</button>`}</div>` : ""}
     ${TIENDA.filter(t => t.slot === s).map(t => {
       const tiene = inv.includes(t.id), en = equipado(t);
       const sw = t.slot === "color" ? `<span class="sw" style="background:${COLORES_MASCOTA[t.valor].cuerpo}"></span>` : "";
       return `<div class="li"><div class="row" style="min-width:0">${sw}<div style="min-width:0"><div class="t">${esc(t.nombre)}</div><div class="d">${tiene ? (en ? "Lo traes puesto" : "Ya es tuyo") : `⭐ ${t.precio}`}</div></div></div>
         <div class="row">${!tiene ? `<button class="ghost" data-act="probar" data-id="${t.id}">Probar</button><button class="btn ${D.puntos.saldo >= t.precio ? "primary" : ""}" data-act="comprar" data-id="${t.id}" ${D.puntos.saldo >= t.precio ? "" : "disabled"}>Comprar</button>`
-        : en && (t.slot !== "color" && t.slot !== "fondo") ? `<button class="btn" data-act="quitar" data-id="${t.id}">Quitar</button>`
-        : en ? `<span class="pill">En uso</span>` : `<button class="btn" data-act="usar" data-id="${t.id}">Usar</button>`}</div></div>`;
+        : en && !["color", "fondo", "especie"].includes(t.slot) ? `<button class="btn" data-act="quitar" data-id="${t.id}">Quitar</button>`
+        : en ? `<span class="pill">${t.slot === "especie" ? "Contigo" : "En uso"}</span>` : `<button class="btn" data-act="usar" data-id="${t.id}">${t.slot === "especie" ? "Elegir" : "Usar"}</button>`}</div></div>`;
     }).join("")}</section>`).join("");
 }
 ACT.probar = el => { probar = el.dataset.id; render(); scrollTo(0, 0); };
@@ -387,10 +446,11 @@ ACT.comprar = el => {
   D.puntos.saldo -= t.precio; D.puntos.log.unshift({t: Date.now(), txt: `Compra: ${t.nombre}`, pts: -t.precio});
   D.mascota.inventario.push(t.id); probar = null; usarItem(t); guardarYa(); revisarLogros(); syncWidget(); toast(`¡${t.nombre} es tuyo!`); keepScroll(() => {});
 };
-function usarItem(t) { const m = D.mascota; if (t.slot === "color") m.color = t.valor; else if (t.slot === "fondo") m.fondo = t.valor; else m.equipo[t.slot] = t.id; }
+const colorOriginal = () => !D.mascota.color || D.mascota.color === "original" || D.mascota.color === "amarillo";
+function usarItem(t) { const m = D.mascota; if (t.slot === "especie") m.especie = t.valor; else if (t.slot === "color") m.color = t.valor; else if (t.slot === "fondo") m.fondo = t.valor; else m.equipo[t.slot] = t.id; }
 ACT.usar = el => { usarItem(TIENDA.find(x => x.id === el.dataset.id)); guardar(); syncWidget(); keepScroll(() => {}); };
 ACT.quitar = el => { const t = TIENDA.find(x => x.id === el.dataset.id); D.mascota.equipo[t.slot] = null; guardar(); syncWidget(); keepScroll(() => {}); };
-ACT.usarBase = el => { if (el.dataset.k === "color") D.mascota.color = "amarillo"; else D.mascota.fondo = "ninguno"; guardar(); syncWidget(); keepScroll(() => {}); };
+ACT.usarBase = el => { const k = el.dataset.k; if (k === "color") D.mascota.color = "original"; else if (k === "especie") D.mascota.especie = "monstruo"; else D.mascota.fondo = "ninguno"; guardar(); syncWidget(); keepScroll(() => {}); };
 
 // ---- Logros ----
 function bLogros(head) {
@@ -428,18 +488,19 @@ function svgAPng(svg, size = 256) {
   });
 }
 // Mensajes programados para que el widget cambie aunque no abras la app
+const esRecordatorio = msg => !/^(Aquí andamos|Sin retos activos|Vas con “)/.test(msg);
 function agendaWidget() {
-  const ahora = Date.now(); const lista = [{t: ahora, msg: mensajeMascota()}];
+  const ahora = Date.now(); const actual = mensajeMascota(); const lista = [{t: ahora, msg: actual, r: esRecordatorio(actual) ? 1 : 0}];
   const base = new Date(); base.setMinutes(0, 0, 0);
   const metaOk = (D.agua[hoy()] || 0) >= D.ajustes.aguaMeta;
   for (let i = 1; i <= 30; i++) {
     const d = new Date(base.getTime() + i * 3600000); const h = d.getHours(); const mismoDia = keyFecha(d) === hoy();
-    if (h === 0) lista.push({t: d.getTime(), msg: "Nuevo día, nuevos puntos 💪 Abre la app para ver qué toca."});
-    else if (mismoDia && !metaOk && h >= 10 && h <= 21 && h % 2 === 0) lista.push({t: d.getTime(), msg: "¿Ya tomaste agua? Un vaso y sigues 💧"});
-    else if (mismoDia && h === 19 && habitosPendientes()) lista.push({t: d.getTime(), msg: "No olvides tus hábitos de hoy, son puntos fáciles."});
-    else if (!mismoDia && h >= 9 && h <= 21 && h % 3 === 0) lista.push({t: d.getTime(), msg: "¿Agua, hábitos, retos? Pásate a verme."});
+    if (h === 0) lista.push({t: d.getTime(), msg: "Nuevo día, nuevos puntos 💪 Abre la app para ver qué toca.", r: 0});
+    else if (mismoDia && !metaOk && h >= 10 && h <= 21 && h % 2 === 0) lista.push({t: d.getTime(), msg: "¿Ya tomaste agua? Un vaso y sigues 💧", r: 1});
+    else if (mismoDia && h === 19 && habitosPendientes()) lista.push({t: d.getTime(), msg: "No olvides tus hábitos de hoy, son puntos fáciles.", r: 1});
+    else if (!mismoDia && h >= 9 && h <= 21 && h % 3 === 0) lista.push({t: d.getTime(), msg: "¿Agua, hábitos, retos? Pásate a verme.", r: 0});
   }
-  D.retos.filter(r => r.estado === "activo" && r.fin > ahora).forEach(r => lista.push({t: r.fin, msg: `¡Tu reto “${r.titulo}” ya está listo para cobrar! (+${r.pts})`, prio: 1}));
+  D.retos.filter(r => r.estado === "activo" && r.fin > ahora).forEach(r => lista.push({t: r.fin, msg: `¡Tu reto “${r.titulo}” ya está listo para cobrar! (+${r.pts})`, r: 1}));
   return lista.sort((a, b) => a.t - b.t);
 }
 let _tw;
@@ -448,7 +509,9 @@ function syncWidget() {
   _tw = setTimeout(async () => {
     try {
       const image = await svgAPng(petSVG({fondo: D.mascota.fondo}));
-      await PW.update({image, nombre: D.mascota.nombre, info: `Nv ${nivel(D.puntos.xp)} · ⭐ ${D.puntos.saldo}`, agenda: JSON.stringify(agendaWidget())});
+      const am = D.ajustes.mascota;
+      await PW.update({image, nombre: D.mascota.nombre, info: `Nv ${nivel(D.puntos.xp)} · ⭐ ${D.puntos.saldo}`, agenda: JSON.stringify(agendaWidget()),
+        notif: !!am.notif, flotante: !!am.flotante, cada: am.cada || 60});
     } catch (e) { console.warn("widget", e); }
   }, 1200);
 }
@@ -456,3 +519,19 @@ function syncWidget() {
 // ================= Arranque =================
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { syncWidget(); programarHabitos(); } });
 window.addEventListener("DOMContentLoaded", () => { revisarLogros(); syncWidget(); programarHabitos(); });
+
+// ================= Mascota flotante (encima de otras apps) =================
+let flotPermiso = null;
+async function revisarFlotante() {
+  if (!PW) return null;
+  try { flotPermiso = (await PW.canOverlay()).granted; } catch (e) { flotPermiso = false; }
+  return flotPermiso;
+}
+ACT.permFlot = async () => { try { await PW.openOverlaySettings(); } catch (e) { toast("Abre Ajustes > Apps > Modo Bestia > Mostrar sobre otras apps"); } };
+ACT.probarFlot = async () => {
+  if (!PW) { toast("Funciona en la app instalada en Android."); return; }
+  if (!(await revisarFlotante())) { toast("Primero da el permiso de mostrar sobre otras apps."); return; }
+  syncWidget();
+  setTimeout(() => PW.testFloat({msg: mensajeMascota()}).catch(() => {}), 1600);
+  toast("Sal de la app: en unos segundos aparece 👀");
+};

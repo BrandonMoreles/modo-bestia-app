@@ -55,6 +55,9 @@ public class ScreenTimeWorker extends Worker {
                 long already = sp.getLong(key, 0);
                 if (step >= 1 && step > already) {
                     notify(ctx, i + 7000, label, min, limit);
+                    if (sp2(ctx).getBoolean("flotante", false)) {
+                        PetCompanion.showFloatBlocking(ctx, "Llevas " + min + " min en " + label + ". ¡Suéltalo un rato! 🙌");
+                    }
                     sp.edit().putLong(key, step).apply();
                 }
             }
@@ -93,5 +96,9 @@ public class ScreenTimeWorker extends Worker {
         } catch (SecurityException se) {
             // Sin permiso de notificaciones: no hay nada que hacer.
         }
+    }
+
+    private static SharedPreferences sp2(Context ctx) {
+        return ctx.getSharedPreferences(PetWidgetProvider.PREFS, Context.MODE_PRIVATE);
     }
 }

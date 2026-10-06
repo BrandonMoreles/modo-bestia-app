@@ -13,6 +13,8 @@ App de Android para gym, nutrición y enfoque. Todo se guarda en tu teléfono.
   - **Tienda:** accesorios, colores y fondos para la mascota (puedes probarlos antes de comprar).
   - **Logros:** 14 medallas e historial de puntos.
   - Puntos extra: hábito +5, meta de agua +10, entrenamiento +25, Pomodoro +5, medalla +25.
+- **Especies:** monstruo, gorila, ajolote y xolo (en la Tienda). Todos los accesorios les quedan a todos.
+- **Notificación persistente y mascota flotante** (Ajustes → Mascota). La flotante necesita el permiso "Mostrar sobre otras apps".
 - **Widget:** mantén presionada la pantalla de inicio → Widgets → Modo Bestia. La mascota te recuerda agua, hábitos y retos listos.
 - **Ajustes** (engrane en Hoy): metas de macros (con sugerencia según tu peso), recordatorios de agua, recordatorio de gym por día y hora, tema claro/oscuro, exportar e importar respaldo.
 

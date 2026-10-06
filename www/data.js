@@ -178,3 +178,16 @@ const LOGROS = [
   {id:"pts1000", nombre:"Mil puntos", desc:"Gana 1,000 puntos en total", test:s=>s.xp>=1000},
   {id:"pts5000", nombre:"Leyenda", desc:"Gana 5,000 puntos en total", test:s=>s.xp>=5000},
 ];
+
+// Especies de mascota. "colores" es su color original (los colores de la tienda lo reemplazan).
+const ESPECIES = {
+  monstruo:{nombre:"Monstruo", colores:{cuerpo:"#F2C230", panza:"#FBE39A", borde:"#B98C10"}},
+  gorila:{nombre:"Gorila", colores:{cuerpo:"#4A5258", panza:"#9C8A7C", borde:"#22282C"}},
+  ajolote:{nombre:"Ajolote", colores:{cuerpo:"#F5A3BE", panza:"#FCD9E5", borde:"#C2577C"}},
+  xolo:{nombre:"Xolo", colores:{cuerpo:"#565D66", panza:"#8D949D", borde:"#252A30"}},
+};
+TIENDA.unshift(
+  {id:"e_gorila", nombre:"Gorila", slot:"especie", valor:"gorila", precio:500},
+  {id:"e_ajolote", nombre:"Ajolote", slot:"especie", valor:"ajolote", precio:500},
+  {id:"e_xolo", nombre:"Xolo", slot:"especie", valor:"xolo", precio:500},
+);
