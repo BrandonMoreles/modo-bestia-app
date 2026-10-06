@@ -161,8 +161,39 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);border-top-color:var(--pl
 .medalla .ico{font-size:1.4rem}
 .medalla .t{font-family:var(--display);font-weight:700;font-size:1.05rem}
 .medalla .d{font-size:.78rem;color:var(--muted)}
-@media (prefers-reduced-motion:no-preference){.petbig svg,.petmini svg{animation:respira 3.2s ease-in-out infinite;transform-origin:50% 90%}}
-@keyframes respira{50%{transform:scale(1.025,.985)}}
+.petbig{cursor:pointer;-webkit-user-select:none;user-select:none}
+/* Animación de la mascota: cada parte se mueve y lo que trae puesto se mueve con ella */
+.pet .p-fx{opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .pet .p-cuerpo{transform-origin:100px 188px;animation:p-resp 3.4s ease-in-out infinite}
+  .pet .p-cabeza{transform-origin:100px 132px;animation:p-cab 3.4s ease-in-out infinite}
+  .pet .p-sombra{transform-origin:100px 192px;animation:p-sombra 3.4s ease-in-out infinite}
+  .pet .p-parp{transform-origin:100px 85px;animation:p-parp 5s infinite}
+  .pet .p-bizq{transform-origin:62px 132px;animation:p-bizq 3.4s ease-in-out infinite}
+  .pet .p-bder{transform-origin:138px 132px;animation:p-bder 3.4s ease-in-out infinite}
+  .pet.con-mancuerna .p-bder{animation:p-curl 4.2s ease-in-out infinite}
+  .pet.con-shaker .p-bder{animation:p-shake 5s ease-in-out infinite}
+  .pet .p-capa{transform-origin:100px 124px;animation:p-capa 2.8s ease-in-out infinite}
+  .pet.animo-feliz .p-todo{transform-origin:100px 190px;animation:p-brinco 2.8s ease-in-out infinite}
+  .pet.animo-triste .p-cabeza{animation:p-cab-triste 4s ease-in-out infinite}
+  .pet.salta .p-todo{transform-origin:100px 190px;animation:p-salto .7s cubic-bezier(.3,.7,.4,1)}
+  .pet.salta .p-sombra{animation:p-sombra-salto .7s ease-out}
+  .pet.salta .p-fx{animation:p-fx .9s ease-out}
+}
+@keyframes p-resp{50%{transform:scale(1.02,.965)}}
+@keyframes p-cab{50%{transform:translateY(2.6px) rotate(-1.5deg)}}
+@keyframes p-cab-triste{0%,100%{transform:translateY(3px) rotate(4deg)}50%{transform:translateY(4.5px) rotate(5deg)}}
+@keyframes p-sombra{50%{transform:scaleX(1.04)}}
+@keyframes p-parp{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes p-bizq{50%{transform:rotate(6deg)}}
+@keyframes p-bder{50%{transform:rotate(-6deg)}}
+@keyframes p-curl{0%,35%,100%{transform:rotate(0)}55%,65%{transform:rotate(-58deg)}}
+@keyframes p-shake{0%,60%,100%{transform:rotate(0)}66%{transform:rotate(-28deg)}70%{transform:rotate(-14deg)}74%{transform:rotate(-30deg)}78%{transform:rotate(-12deg)}84%{transform:rotate(0)}}
+@keyframes p-capa{50%{transform:skewX(-4deg) scaleX(1.03)}}
+@keyframes p-brinco{0%,70%,100%{transform:translateY(0) scale(1,1)}76%{transform:translateY(0) scale(1.06,.92)}84%{transform:translateY(-12px) scale(.96,1.05)}92%{transform:translateY(0) scale(1.04,.95)}}
+@keyframes p-salto{0%{transform:scale(1.08,.88)}35%{transform:translateY(-26px) scale(.94,1.08)}70%{transform:translateY(0) scale(1.06,.92)}100%{transform:none}}
+@keyframes p-sombra-salto{35%{transform:scale(.7);opacity:.08}}
+@keyframes p-fx{0%{opacity:0;transform:translateY(10px)}30%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>

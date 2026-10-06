@@ -13,7 +13,7 @@ function otorgar(key, pts, txt) {
   if (D.otorgados[key] != null) return false;
   D.otorgados[key] = pts; D.puntos.saldo += pts; D.puntos.xp += pts;
   D.puntos.log.unshift({t: Date.now(), txt, pts}); D.puntos.log = D.puntos.log.slice(0, 200);
-  guardar(); revisarLogros(); syncWidget();
+  guardar(); revisarLogros(); syncWidget(); petReaccion = Date.now();
   return true;
 }
 function revocar(key, txt) {
@@ -49,56 +49,165 @@ function revisarLogros() {
 }
 
 // ================= Mascota (dibujo) =================
+// Mezcla dos colores hex (t = 0 → a, t = 1 → b)
+function mezc(a, b, t) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const c = s => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t);
+  return "#" + ((1 << 24) + (c(16) << 16) + (c(8) << 8) + c(0)).toString(16).slice(1);
+}
+let petSeq = 0, petReaccion = 0;
+
+/* La mascota está armada como un esqueleto: cuerpo, brazos y cabeza son grupos.
+   Cada accesorio vive DENTRO de la parte que lo carga (la gorra en la cabeza, la pesa en la mano),
+   así se mueve con ella. La ropa se recorta a la silueta y todo comparte la misma luz y contorno. */
 function petSVG(o = {}) {
   const m = D.mascota;
   const eq = o.equipo || m.equipo;
   const col = COLORES_MASCOTA[o.color || m.color] || COLORES_MASCOTA.amarillo;
   const fondo = o.fondo !== undefined ? o.fondo : m.fondo;
   const animo = o.animo || animoMascota();
-  const ink = "#1D2A33";
+  const u = "p" + (++petSeq);
+  const ink = "#1D2A33", L = col.borde, SW = 3;
+  const piel = col.cuerpo, panza = col.panza, cuerno = mezc(col.panza, "#ffffff", .35);
+  const lin = (id, a, b) => `<linearGradient id="${u}${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+  const ref = id => `url(#${u}${id})`;
+
+  const defs = `<defs>
+    <radialGradient id="${u}luz" cx=".34" cy=".26" r=".85">
+      <stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".72" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".26"/></radialGradient>
+    <clipPath id="${u}cc"><ellipse cx="100" cy="150" rx="44.5" ry="36.5"/></clipPath>
+    <clipPath id="${u}ccx"><ellipse cx="100" cy="150" rx="47" ry="39"/></clipPath>
+    <clipPath id="${u}cab"><circle cx="100" cy="84" r="48.6"/></clipPath>
+    <clipPath id="${u}cabx"><circle cx="100" cy="84" r="52"/></clipPath>
+    ${lin("roja", "#E8605A", "#A9312C")}${lin("azul", "#4F86D9", "#23498A")}${lin("oro", "#FFE07A", "#C9921A")}
+    ${lin("metal", "#9AA6AF", "#4C5862")}${lin("negro", "#3A4650", "#11181D")}${lin("vidrio", "#3D5566", "#0E161C")}
+    ${lin("capa", "#C8423B", "#7E211D")}${lin("cielo", "#ff8a5c", "#ffd27a")}
+  </defs>`;
+
   const fondos = {
-    gym: `<rect width="200" height="200" rx="28" fill="#3b4650"/><rect y="160" width="200" height="40" fill="#2a3239"/><rect x="18" y="40" width="6" height="110" fill="#566370"/><rect x="176" y="40" width="6" height="110" fill="#566370"/><rect x="18" y="70" width="164" height="5" fill="#566370"/>`,
-    playa: `<rect width="200" height="200" rx="28" fill="#8fd3f4"/><circle cx="160" cy="42" r="18" fill="#ffe27a"/><rect y="138" width="200" height="14" fill="#4cb8eb"/><path d="M0 150h200v22q0 28-28 28H28Q0 200 0 172z" fill="#f2d49b"/>`,
-    atardecer: `<defs><linearGradient id="atd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a5c"/><stop offset="1" stop-color="#ffd27a"/></linearGradient></defs><rect width="200" height="200" rx="28" fill="url(#atd)"/><circle cx="100" cy="160" r="40" fill="#fff1b8" opacity=".7"/>`,
-    noche: `<rect width="200" height="200" rx="28" fill="#1b2440"/><circle cx="158" cy="40" r="14" fill="#f4f1d0"/><circle cx="152" cy="36" r="13" fill="#1b2440"/>${[[30, 30], [60, 55], [100, 22], [26, 92], [176, 96], [124, 60]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2" fill="#fff"/>`).join("")}`,
+    gym: `<rect width="200" height="200" rx="28" fill="#3b4650"/><rect y="168" width="200" height="32" fill="#2a3239"/><rect x="16" y="44" width="6" height="124" fill="#566370"/><rect x="178" y="44" width="6" height="124" fill="#566370"/><rect x="16" y="76" width="168" height="5" fill="#566370"/><rect x="26" y="68" width="8" height="20" rx="2" fill="#20282e"/><rect x="166" y="68" width="8" height="20" rx="2" fill="#20282e"/>`,
+    playa: `<rect width="200" height="200" rx="28" fill="#8fd3f4"/><circle cx="160" cy="40" r="17" fill="#ffe27a"/><rect y="142" width="200" height="16" fill="#4cb8eb"/><path d="M0 154h200v18q0 28-28 28H28Q0 200 0 172z" fill="#f2d49b"/>`,
+    atardecer: `<rect width="200" height="200" rx="28" fill="${ref("cielo")}"/><circle cx="100" cy="168" r="44" fill="#fff1b8" opacity=".6"/>`,
+    noche: `<rect width="200" height="200" rx="28" fill="#1b2440"/><circle cx="160" cy="38" r="13" fill="#f4f1d0"/><circle cx="154" cy="34" r="12" fill="#1b2440"/>${[[30, 30], [60, 55], [104, 20], [24, 96], [178, 104], [126, 58]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#fff"/>`).join("")}`,
   };
+
+  // ---------- Ojos y boca ----------
   const ojos = animo === "feliz"
-    ? `<path d="M71 113q9-11 18 0M111 113q9-11 18 0" stroke="${ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`
-    : animo === "triste"
-      ? `<circle cx="80" cy="112" r="5.5" fill="${ink}"/><circle cx="120" cy="112" r="5.5" fill="${ink}"/><path d="M70 99l18 5M130 99l-18 5" stroke="${ink}" stroke-width="3.5" stroke-linecap="round"/>`
-      : `<circle cx="80" cy="110" r="6.5" fill="${ink}"/><circle cx="120" cy="110" r="6.5" fill="${ink}"/><circle cx="82" cy="108" r="2" fill="#fff"/><circle cx="122" cy="108" r="2" fill="#fff"/>`;
-  const boca = animo === "feliz" ? `<path d="M88 125q12 14 24 0" stroke="${ink}" stroke-width="4" fill="#C8423B" stroke-linejoin="round"/>`
-    : animo === "triste" ? `<path d="M90 134q10-9 20 0" stroke="${ink}" stroke-width="4" fill="none" stroke-linecap="round"/>`
-      : `<path d="M91 128q9 5 18 0" stroke="${ink}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-  const acc = {
-    capa: `<path d="M50 100Q28 168 40 186h120q12-18-10-86z" fill="#C8423B"/>`,
-    banda: `<rect x="58" y="82" width="84" height="12" rx="6" fill="#D9534F"/><rect x="58" y="86" width="84" height="3" fill="#fff" opacity=".7"/>`,
-    gorra: `<path d="M60 86Q100 36 140 86z" fill="#2F64B0"/><path d="M118 82q34-6 52 6-20 6-52 2z" fill="#234d88"/><circle cx="100" cy="58" r="4" fill="#234d88"/>`,
-    audifonos: `<path d="M50 114Q50 46 100 46t50 68" stroke="${ink}" stroke-width="7" fill="none"/><rect x="38" y="100" width="18" height="28" rx="7" fill="#D9534F"/><rect x="144" y="100" width="18" height="28" rx="7" fill="#D9534F"/>`,
-    corona: `<path d="M70 74l6-28 12 16 12-22 12 22 12-16 6 28z" fill="#F5C542" stroke="#B98C10" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="64" r="4" fill="#C8423B"/><circle cx="82" cy="68" r="3" fill="#3a7bd5"/><circle cx="118" cy="68" r="3" fill="#3a7bd5"/>`,
-    lentes: `<rect x="64" y="100" width="30" height="19" rx="7" fill="${ink}"/><rect x="106" y="100" width="30" height="19" rx="7" fill="${ink}"/><path d="M94 107h12" stroke="${ink}" stroke-width="4"/><path d="M70 105l8-1" stroke="#fff" stroke-width="2" opacity=".6"/><path d="M112 105l8-1" stroke="#fff" stroke-width="2" opacity=".6"/>`,
-    bigote: `<path d="M82 121q9-8 18-2 9-6 18 2-9 6-18 2-9 4-18-2z" fill="#5a3a22"/>`,
-    playera: `<path d="M64 112l14-6q22 14 44 0l14 6 4 56q-40 16-80 0z" fill="#D9534F" opacity=".95"/>`,
-    cadena: `<path d="M72 138q28 22 56 0" stroke="#F5C542" stroke-width="4" fill="none" stroke-dasharray="3 3"/><circle cx="100" cy="150" r="6" fill="#F5C542" stroke="#B98C10" stroke-width="2"/>`,
-    mancuerna: `<rect x="150" y="137" width="36" height="6" rx="2" fill="#7a8791"/><rect x="146" y="127" width="8" height="26" rx="2" fill="${ink}"/><rect x="182" y="127" width="8" height="26" rx="2" fill="${ink}"/>`,
-    shaker: `<rect x="150" y="116" width="22" height="36" rx="5" fill="#f4f6f8" stroke="#8a97a1" stroke-width="2"/><rect x="150" y="110" width="22" height="9" rx="3" fill="#3a7bd5"/><rect x="153" y="132" width="16" height="17" rx="3" fill="#c49a6c"/>`,
+    ? `<path d="M73 88q9-11 18 0M109 88q9-11 18 0" stroke="${ink}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`
+    : `<g class="p-parp"><ellipse cx="82" cy="85" rx="7" ry="${animo === "triste" ? 6 : 8}" fill="${ink}"/><ellipse cx="118" cy="85" rx="7" ry="${animo === "triste" ? 6 : 8}" fill="${ink}"/>
+       <circle cx="84.5" cy="81.5" r="2.4" fill="#fff"/><circle cx="120.5" cy="81.5" r="2.4" fill="#fff"/></g>
+       ${animo === "triste" ? `<path d="M73 76l15-5M127 76l-15-5" stroke="${ink}" stroke-width="3.5" stroke-linecap="round"/>` : ""}`;
+  const boca = animo === "feliz"
+    ? `<path d="M89 101q11 13 22 0z" fill="#B8423C" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/><path d="M94 106q6 4 12 0" stroke="#F28B82" stroke-width="3" stroke-linecap="round" fill="none"/>`
+    : animo === "triste" ? `<path d="M91 108q9-8 18 0" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
+      : `<path d="M92 103q8 6 16 0" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+  const colmillo = animo === "triste" ? "" : `<path d="M${animo === "feliz" ? "102 101.5l2.5 5 2.5-5.5" : "103 105.5l2 4.5 2.4-5.4"}z" fill="#fff" stroke="${ink}" stroke-width="1.4" stroke-linejoin="round"/>`;
+
+  // ---------- Accesorios por parte del cuerpo ----------
+  const cabezaAtras = {
+    audifonos: `<rect x="40" y="72" width="16" height="30" rx="7" fill="${ref("roja")}" stroke="${L}" stroke-width="${SW}"/><rect x="144" y="72" width="16" height="30" rx="7" fill="${ref("roja")}" stroke="${L}" stroke-width="${SW}"/>`,
   };
-  const pon = slot => eq[slot] && acc[eq[slot]] ? acc[eq[slot]] : "";
-  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  const cabezaPiel = { // se recorta a la cabeza: se "enreda" en la silueta
+    banda: `<path d="M44 60q56-22 112 0v15q-56-20-112 0z" fill="${ref("roja")}"/><path d="M44 66q56-21 112 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".75"/><path d="M44 75q56-20 112 0" stroke="${mezc("#A9312C", "#000", .2)}" stroke-width="2" fill="none" opacity=".6"/>`,
+  };
+  const cabezaFrente = {
+    banda: `<path d="M148 62q16-2 20 8-10 0-16 4z" fill="${ref("roja")}" stroke="${L}" stroke-width="2"/><path d="M150 68q14 6 14 16-8-6-15-6z" fill="${ref("roja")}" stroke="${L}" stroke-width="2"/>`,
+    gorra: `<path d="M50 70A51 51 0 0 1 150 70q-50-14-100 0z" fill="${ref("azul")}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
+      <path d="M100 33v28M72 44q14 8 16 22M128 44q-14 8-16 22" stroke="#1d3d73" stroke-width="2" fill="none" opacity=".7"/>
+      <path d="M50 70q50-14 100 0q-6 12-50 12t-50-12z" fill="#23498A" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
+      <circle cx="100" cy="34" r="4.5" fill="#23498A" stroke="${L}" stroke-width="2"/>`,
+    audifonos: `<path d="M48 84A52 52 0 0 1 152 84" stroke="${ref("negro")}" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <rect x="36" y="70" width="18" height="34" rx="8" fill="${ref("roja")}" stroke="${L}" stroke-width="${SW}"/><rect x="146" y="70" width="18" height="34" rx="8" fill="${ref("roja")}" stroke="${L}" stroke-width="${SW}"/>
+      <rect x="40" y="78" width="4" height="18" rx="2" fill="#fff" opacity=".35"/><rect x="150" y="78" width="4" height="18" rx="2" fill="#fff" opacity=".35"/>`,
+    corona: `<g transform="rotate(-8 100 38)"><path d="M74 46l4-24 11 13 11-19 11 19 11-13 4 24q-26-7-52 0z" fill="${ref("oro")}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
+      <circle cx="100" cy="36" r="4" fill="#C8423B" stroke="${L}" stroke-width="1.5"/><circle cx="84" cy="40" r="2.6" fill="#3a7bd5"/><circle cx="116" cy="40" r="2.6" fill="#3a7bd5"/>
+      <path d="M80 40l2-10" stroke="#fff" stroke-width="2" opacity=".6" stroke-linecap="round"/></g>`,
+  };
+  const cara = {
+    lentes: `<path d="M56 82l12 2M144 82l-12 2" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M67 77q15-4 30 0 1 13-14 15-15-1-16-15z" fill="${ref("vidrio")}" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M103 77q15-4 30 0-1 14-16 15-15-2-14-15z" fill="${ref("vidrio")}" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M97 79q3-2 6 0" stroke="${ink}" stroke-width="3" fill="none"/>
+      <path d="M72 82l7-3M108 82l7-3" stroke="#fff" stroke-width="2.2" opacity=".55" stroke-linecap="round"/>`,
+    bigote: `<path d="M100 98q-6-6-14-3-6 3-9 9 8-3 13-1 6 1 10-5 4 6 10 5 5-2 13 1-3-6-9-9-8-3-14 3z" fill="#5a3a22" stroke="#3b2414" stroke-width="1.5" stroke-linejoin="round"/>`,
+  };
+  const enMano = { // vive dentro del brazo derecho
+    mancuerna: `<rect x="132" y="162" width="36" height="5" rx="2" fill="${ref("metal")}" stroke="${L}" stroke-width="1.5"/>
+      <rect x="127" y="152" width="9" height="25" rx="2.5" fill="${ref("negro")}" stroke="${L}" stroke-width="2"/><rect x="164" y="152" width="9" height="25" rx="2.5" fill="${ref("negro")}" stroke="${L}" stroke-width="2"/>`,
+    shaker: `<path d="M141 138h20l-2 34h-16z" fill="#eef2f5" stroke="${L}" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M143.5 154h15l-1 16h-13z" fill="#c49a6c"/><rect x="140" y="131" width="22" height="9" rx="3" fill="${ref("azul")}" stroke="${L}" stroke-width="2.5"/>
+      <path d="M145 142v26" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/>`,
+  };
+  const ropa = { // se recorta al cuerpo: queda "puesta"
+    playera: `<path d="M50 200V120q16-6 28-6 6 18 22 18t22-18q12 0 28 6v80z" fill="${ref("roja")}"/>
+      <path d="M78 114q6 18 22 18t22-18" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>
+      <path d="M86 150h28M88 158h24" stroke="#fff" stroke-width="3" opacity=".25" stroke-linecap="round"/>`,
+  };
+  const cuello = {
+    cadena: `<path d="M64 128q36 34 72 0" stroke="${ref("oro")}" stroke-width="4" fill="none" stroke-dasharray="4 2.5"/>
+      <circle cx="100" cy="146" r="7.5" fill="${ref("oro")}" stroke="${L}" stroke-width="2"/><path d="M96 146h8M97 143v6M103 143v6" stroke="${L}" stroke-width="1.6"/>`,
+  };
+  const tiene = (slot, id) => eq[slot] === id;
+  const capaOn = tiene("cuerpo", "capa");
+  const item = eq.mano && enMano[eq.mano] ? enMano[eq.mano] : "";
+
+  const brazo = (lado) => {
+    const izq = lado === "izq";
+    const cx = izq ? 56 : 144, rot = izq ? 18 : -18;
+    const mano = izq ? "" : (item ? `${item}<circle cx="150" cy="164.5" r="7.5" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>` : "");
+    return `<g class="p-b${lado}"><ellipse cx="${cx}" cy="148" rx="10.5" ry="19" fill="${piel}" stroke="${L}" stroke-width="${SW}" transform="rotate(${rot} ${cx} 148)"/>
+      <ellipse cx="${cx}" cy="148" rx="10.5" ry="19" fill="url(#${u}luz)" transform="rotate(${rot} ${cx} 148)"/>${mano}</g>`;
+  };
+
+  const clases = ["pet", "animo-" + animo, item ? "con-" + eq.mano : "", capaOn ? "con-capa" : "", Date.now() - petReaccion < 900 ? "salta" : ""].join(" ");
+  return `<svg class="${clases}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">${defs}
     ${fondos[fondo] || ""}
-    ${eq.cuerpo === "capa" ? acc.capa : ""}
-    <ellipse cx="78" cy="178" rx="15" ry="7" fill="${col.borde}"/><ellipse cx="122" cy="178" rx="15" ry="7" fill="${col.borde}"/>
-    <path d="M64 84l-8-32 26 20zM136 84l8-32-26 20z" fill="${col.borde}"/>
-    <ellipse cx="44" cy="132" rx="11" ry="17" fill="${col.cuerpo}" stroke="${col.borde}" stroke-width="3" transform="rotate(-20 44 132)"/>
-    <ellipse cx="100" cy="125" rx="60" ry="55" fill="${col.cuerpo}" stroke="${col.borde}" stroke-width="3"/>
-    <ellipse cx="100" cy="142" rx="36" ry="30" fill="${col.panza}"/>
-    ${eq.cuerpo && eq.cuerpo !== "capa" ? pon("cuerpo") : ""}
-    <ellipse cx="156" cy="132" rx="11" ry="17" fill="${col.cuerpo}" stroke="${col.borde}" stroke-width="3" transform="rotate(20 156 132)"/>
-    <circle cx="66" cy="125" r="7" fill="#F28B82" opacity=".55"/><circle cx="134" cy="125" r="7" fill="#F28B82" opacity=".55"/>
-    ${ojos}${boca}
-    ${pon("cara")}${pon("cabeza")}${pon("mano")}
+    <ellipse class="p-sombra" cx="100" cy="192" rx="46" ry="6" fill="#000" opacity=".18"/>
+    <g class="p-todo">
+      <g class="p-cuerpo">
+        ${capaOn ? `<g class="p-capa"><path d="M64 122q-24 44-18 70 54 10 108 0 6-26-18-70z" fill="${ref("capa")}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/><path d="M76 140q-8 26-6 48M124 140q8 26 6 48" stroke="#5f1814" stroke-width="2" fill="none" opacity=".5"/></g>` : ""}
+        <ellipse cx="82" cy="186" rx="15" ry="8" fill="${mezc(piel, L, .35)}" stroke="${L}" stroke-width="${SW}"/>
+        <ellipse cx="118" cy="186" rx="15" ry="8" fill="${mezc(piel, L, .35)}" stroke="${L}" stroke-width="${SW}"/>
+        <ellipse cx="100" cy="150" rx="46" ry="38" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>
+        <g clip-path="url(#${u}cc)">
+          <ellipse cx="100" cy="162" rx="28" ry="24" fill="${panza}"/>
+          ${eq.cuerpo && ropa[eq.cuerpo] ? ropa[eq.cuerpo] : ""}
+        </g>
+        <g clip-path="url(#${u}ccx)"><rect x="40" y="100" width="120" height="100" fill="url(#${u}luz)"/></g>
+        ${capaOn ? `<circle cx="70" cy="125" r="4.5" fill="${ref("oro")}" stroke="${L}" stroke-width="1.5"/><circle cx="130" cy="125" r="4.5" fill="${ref("oro")}" stroke="${L}" stroke-width="1.5"/>` : ""}
+        ${eq.cuerpo && cuello[eq.cuerpo] ? cuello[eq.cuerpo] : ""}
+        ${brazo("izq")}${brazo("der")}
+      </g>
+      <g class="p-cabeza">
+        ${eq.cabeza && cabezaAtras[eq.cabeza] ? cabezaAtras[eq.cabeza] : ""}
+        <circle cx="100" cy="84" r="50" fill="${piel}" stroke="${L}" stroke-width="${SW}"/>
+        <g clip-path="url(#${u}cab)">
+          <ellipse cx="100" cy="112" rx="34" ry="20" fill="${panza}" opacity=".55"/>
+          ${eq.cabeza && cabezaPiel[eq.cabeza] ? cabezaPiel[eq.cabeza] : ""}
+        </g>
+        ${tiene("cabeza", "gorra") ? cabezaFrente.gorra : ""}
+        <g clip-path="url(#${u}cabx)"><rect x="46" y="30" width="108" height="108" fill="url(#${u}luz)"/></g>
+        <path d="M70 47q-20 2-26-16 2-6 6-2 6 8 22 7z" fill="${cuerno}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
+        <path d="M130 47q20 2 26-16-2-6-6-2-6 8-22 7z" fill="${cuerno}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>
+        ${eq.cabeza === "gorra" || eq.cabeza === "corona" ? "" : `<path d="M88 37q2-14 10-10 2-10 9-2 8-4 6 10" fill="${piel}" stroke="${L}" stroke-width="${SW}" stroke-linejoin="round"/>`}
+        ${eq.cabeza && eq.cabeza !== "gorra" && cabezaFrente[eq.cabeza] ? cabezaFrente[eq.cabeza] : ""}
+        <ellipse cx="68" cy="99" rx="7" ry="4.5" fill="${mezc(piel, "#E0607E", .45)}" opacity=".55"/><ellipse cx="132" cy="99" rx="7" ry="4.5" fill="${mezc(piel, "#E0607E", .45)}" opacity=".55"/>
+        ${tiene("cara", "lentes") ? "" : ojos}${boca}${tiene("cara", "bigote") ? "" : colmillo}
+        ${eq.cara && cara[eq.cara] ? cara[eq.cara] : ""}
+      </g>
+    </g>
+    <g class="p-fx" fill="#F2C230" stroke="${L}" stroke-width="1.5">
+      <path d="M40 60l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/><path d="M160 54l2.5 6 6 .8-4.4 4.2 1 6-5.1-2.8-5.1 2.8 1-6-4.4-4.2 6-.8z"/><path d="M150 24l2 5 5 .6-3.6 3.4.8 5-4.2-2.4-4.2 2.4.8-5-3.6-3.4 5-.6z"/>
+    </g>
   </svg>`;
 }
+function reaccionar() {
+  petReaccion = Date.now();
+  document.querySelectorAll("svg.pet").forEach(s => { s.classList.remove("salta"); void s.getBoundingClientRect(); s.classList.add("salta"); });
+}
+const FRASES_TOQUE = ["¡Jeje, cosquillas!", "¿Vamos al gym?", "Échale ganas, carnal 💪", "¿Ya tomaste agua?", "¡Otro reto, otro reto!", "Tú puedes con todo."];
+ACT.tocarPet = () => { reaccionar(); const b = document.querySelector(".petbig + .bubble, .petbig ~ .bubble"); if (b) b.textContent = FRASES_TOQUE[Math.floor(Math.random() * FRASES_TOQUE.length)]; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} };
 
 // ================= Ánimo y mensajes =================
 function aguaEsperada() { const h = new Date().getHours() + new Date().getMinutes() / 60; return D.ajustes.aguaMeta * Math.min(1, Math.max(0, (h - 8) / 13)); }
@@ -150,7 +259,7 @@ function vBestia() {
   const equipoPrueba = probar ? probarEquipo(probar) : null;
   const head = `
     <section class="card" style="text-align:center">
-      <div class="petbig">${petSVG(equipoPrueba || {})}</div>
+      <div class="petbig" data-act="tocarPet">${petSVG(equipoPrueba || {})}</div>
       ${probar ? `<p class="small" style="margin:4px 0 0">Probando: <b>${esc(TIENDA.find(t => t.id === probar).nombre)}</b> <button class="ghost" data-act="noProbar">Quitar</button></p>` : `<div class="bubble" style="margin:6px auto 0;max-width:420px">${esc(mensajeMascota())}</div>`}
       <div class="row" style="justify-content:center;gap:6px;margin-top:10px"><h2 data-act="renombrar" style="cursor:pointer">${esc(m.nombre)} ✎</h2><span class="pill">Nivel ${n}</span></div>
       <div class="bar" style="margin:8px 0 4px"><i style="width:${pct(D.puntos.xp - a, b - a)}%"></i></div>
