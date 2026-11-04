@@ -29,7 +29,7 @@ function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.ad
 
 // ================= Datos =================
 const DEFAULTS = {
-  sesiones: [], borrador: null,
+  sesiones: [], borrador: null, rutina: null, rutinaMod: 0, rutinaPrev: null, coach: {msgs: []},
   agua: {}, comida: {}, misAlimentos: [],
   tareas: [], habitos: [
     {id: "h1", nombre: "Creatina"}, {id: "h2", nombre: "Dormir 7–9 h"}, {id: "h3", nombre: "Primeros 30 min sin redes"}],
@@ -62,6 +62,9 @@ function mezclar(base, extra) {
   return base;
 }
 let D = cargar();
+function asegurarRutina() { if (!D.rutina || !Object.keys(D.rutina).length) D.rutina = structuredClone(RUTINA_BASE); if (!D.rutina.libre) D.rutina.libre = {nombre: "Libre", ej: []}; }
+asegurarRutina();
+Object.defineProperty(window, "RUTINA", {get: () => D.rutina});
 let _ts;
 function guardar() { clearTimeout(_ts); _ts = setTimeout(() => { try { localStorage.setItem("mb_data", JSON.stringify(D)); } catch (e) { toast("No se pudo guardar: memoria llena"); } }, 250); }
 function guardarYa() { clearTimeout(_ts); try { localStorage.setItem("mb_data", JSON.stringify(D)); } catch (e) {} }
@@ -127,9 +130,10 @@ function barrasMacros(t) {
   return fila("Calorías", t.kcal, m.kcal, "var(--plate)", "") + fila("Proteína", t.p, m.p, "var(--p)", " g") + fila("Carbos", t.c, m.c, "var(--c)", " g") + fila("Grasa", t.g, m.g, "var(--g)", " g");
 }
 function sugerirDia() {
-  const orden = ["torsoA", "piernaA", "torsoB", "piernaB"];
+  const orden = Object.keys(RUTINA).filter(k => k !== "libre" && !RUTINA[k].opcional && RUTINA[k].ej.length);
+  if (!orden.length) return "libre";
   const ult = D.sesiones.find(s => orden.includes(s.dia));
-  return ult ? orden[(orden.indexOf(ult.dia) + 1) % 4] : "torsoA";
+  return ult ? orden[(orden.indexOf(ult.dia) + 1) % orden.length] : orden[0];
 }
 function entrenosSemana() {
   const d = new Date(); const lunes = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
@@ -163,7 +167,7 @@ function vHoy() {
       <div class="card-head"><h2>Gym</h2><span class="muted small">${entrenoHoy ? "Hecho hoy ✓" : ""}</span></div>
       ${entrenoHoy
         ? `<p style="margin:0">${esc((RUTINA[entrenoHoy.dia] || {nombre: "Entrenamiento"}).nombre)}: ${entrenoHoy.ejercicios.length} ejercicios, ${entrenoHoy.ejercicios.reduce((a, e) => a + e.series.length, 0)} series.</p>`
-        : `<p style="margin:0 0 10px">Te toca <b>${esc(RUTINA[(D.borrador && D.borrador.dia) || sugerirDia()].nombre)}</b>${D.borrador && D.borrador.ejercicios.some(e => e.series.some(s => s.reps)) ? " (lo dejaste a medias)" : ""}.</p>
+        : `<p style="margin:0 0 10px">Te toca <b>${esc((RUTINA[(D.borrador && D.borrador.dia)] || RUTINA[sugerirDia()]).nombre)}</b>${D.borrador && D.borrador.ejercicios.some(e => e.series.some(s => s.reps)) ? " (lo dejaste a medias)" : ""}.</p>
            <button class="btn primary block" data-act="ir" data-to="gym">Ir a entrenar</button>`}
     </section>
 
@@ -249,9 +253,11 @@ function todosEjercicios() {
 }
 
 function vGym() {
-  const tabs = [["entrenar", "Entrenar"], ["historial", "Historial"], ["progreso", "Progreso"]];
-  const head = `<h1>Gym</h1><div class="seg" role="group">${tabs.map(([k, l]) => `<button class="chip" aria-pressed="${sub.gym === k}" data-act="subgym" data-k="${k}">${l}</button>`).join("")}</div>`;
-  if (sub.gym === "entrenar") gymEntrenar(head);
+  const tabs = [["entrenar", "Entrenar"], ["rutina", "Rutina"], ["coach", "Coach IA"], ["historial", "Historial"], ["progreso", "Progreso"]];
+  const head = `<div class="row" style="justify-content:space-between"><h1>Gym</h1><button class="btn" data-act="calc">lb ⇄ kg</button></div><div class="seg" role="group">${tabs.map(([k, l]) => `<button class="chip" aria-pressed="${sub.gym === k}" data-act="subgym" data-k="${k}">${l}</button>`).join("")}</div>`;
+  if (sub.gym === "entrenar") gymEntrenar(head + playerCard());
+  else if (sub.gym === "rutina") gymRutina(head);
+  else if (sub.gym === "coach") gymCoach(head);
   else if (sub.gym === "historial") gymHistorial(head);
   else gymProgreso(head);
 }
@@ -259,7 +265,7 @@ ACT.subgym = el => { sub.gym = el.dataset.k; render(); };
 
 let progEj = null;
 function gymEntrenar(head) {
-  if (!D.borrador) nuevoBorrador(sugerirDia());
+  if (!D.borrador || !RUTINA[D.borrador.dia]) nuevoBorrador(sugerirDia());
   const b = D.borrador;
   const dias = Object.entries(RUTINA).map(([k, d]) => `<button class="chip" aria-pressed="${k === b.dia}" data-act="dia" data-dia="${k}">${esc(d.nombre)}</button>`).join("");
   const ejs = b.ejercicios.map((e, ei) => {
@@ -313,7 +319,7 @@ ACT.guardarEntreno = () => {
   const ejercicios = b.ejercicios.map(x => ({nombre: x.nombre, series: x.series.filter(s => num(s.reps) > 0).map(s => ({peso: num(s.peso), reps: num(s.reps)}))})).filter(x => x.series.length);
   if (!ejercicios.length) { toast("Anota al menos una serie con reps para guardar."); return; }
   D.sesiones = D.sesiones.filter(s => s.id !== b.id);
-  D.sesiones.push({id: b.id, fecha: b.fecha, dia: b.dia, ejercicios, nota: b.nota || ""});
+  D.sesiones.push({id: b.id, fecha: b.fecha, dia: b.dia, ejercicios, nota: b.nota || "", mod: Date.now()});
   ordenarSesiones(); D.borrador = null; guardarYa(); pararDescanso();
   const nuevoPts = otorgar("gym:" + b.id, PTS.gym, `Entrenamiento: ${(RUTINA[b.dia] || {nombre: ""}).nombre}`);
   toast(nuevoPts ? `Entrenamiento guardado 💪 +${PTS.gym}` : "Entrenamiento guardado 💪"); sub.gym = "historial"; render(); scrollTo(0, 0);
@@ -744,6 +750,7 @@ function vAjustes() {
     <section class="card"><h2>Apariencia</h2>
       <div class="seg" style="margin:8px 0 0">${[["auto", "Automático"], ["light", "Claro"], ["dark", "Oscuro"]].map(([k, l]) => `<button class="chip" aria-pressed="${a.tema === k}" data-act="tema" data-k="${k}">${l}</button>`).join("")}</div>
     </section>
+    ${ajustesExtras()}
     <section class="card"><h2>Respaldo</h2>
       <p class="muted small" style="margin:6px 0 10px">Si desinstalas la app se borran tus datos. Exporta un respaldo de vez en cuando (Drive, WhatsApp a ti mismo, etc.).</p>
       <div class="grid2"><button class="btn" data-act="exportar">Exportar</button><button class="btn" data-act="importar">Importar</button></div>
@@ -779,7 +786,7 @@ function importar(ev) {
       const d = JSON.parse(fr.result);
       if (!d || typeof d !== "object" || !("ajustes" in d || "sesiones" in d)) throw 0;
       if (!confirm("Esto reemplaza tus datos actuales con los del respaldo. ¿Continuar?")) return;
-      D = mezclar(structuredClone(DEFAULTS), d); guardarYa(); aplicarTema(); aplicarRecAgua(); aplicarRecGym(); syncVigilancia();
+      D = mezclar(structuredClone(DEFAULTS), d); asegurarRutina(); guardarYa(); aplicarTema(); aplicarRecAgua(); aplicarRecGym(); syncVigilancia();
       toast("Respaldo importado ✓"); syncWidget(); render();
     } catch (e) { toast("Ese archivo no es un respaldo de Modo Bestia."); }
   };
@@ -788,13 +795,14 @@ function importar(ev) {
 ACT.borrarTodo = async () => {
   if (!confirm("¿Borrar TODOS tus datos? No se puede deshacer.")) return;
   if (!confirm("¿Seguro? Te recomiendo exportar un respaldo antes.")) return;
-  D = structuredClone(DEFAULTS); guardarYa(); aplicarTema(); await aplicarRecAgua(); await aplicarRecGym(); await syncVigilancia(); syncWidget(); render(); toast("Datos borrados");
+  D = structuredClone(DEFAULTS); asegurarRutina(); guardarYa(); aplicarTema(); await aplicarRecAgua(); await aplicarRecGym(); await syncVigilancia(); syncWidget(); render(); toast("Datos borrados");
 };
 
 // ================= Inputs (delegados) =================
 let _tr;
 function onInput(e) {
   const t = e.target, k = t.dataset.in; if (!k) return;
+  if (k.startsWith("x_")) { extrasInput(t, k); return; }
   const a = D.ajustes;
   switch (k) {
     case "set": D.borrador.ejercicios[+t.dataset.ei].series[+t.dataset.si][t.dataset.f] = t.value; break;
@@ -810,12 +818,14 @@ function onInput(e) {
     case "limApp": a.pantalla.apps[+t.dataset.i].limit = Math.max(5, Math.round(num(t.value)) || 30); clearTimeout(_tr); _tr = setTimeout(syncVigilancia, 600); break;
     case "rCustom": { const v = num($("#rNum").value) * num($("#rUni").value); if (v > 0) { nuevo.min = Math.min(MAX_RETO, Math.max(MIN_RETO, v)); document.querySelectorAll("[data-act=rPreset]").forEach(b => b.setAttribute("aria-pressed", "false")); refrescarPreview(); } return; }
     case "rTit": nuevo.titulo = t.value; return;
+    case "x": return;
     case "gymHora": if (t.value) { a.gymRec.hora = t.value; clearTimeout(_tr); _tr = setTimeout(aplicarRecGym, 600); } break;
   }
   guardar();
 }
 async function onChange(e) {
   const t = e.target, k = t.dataset.in; if (!k) return;
+  if (k.startsWith("x_")) { extrasChange(t, k); return; }
   const a = D.ajustes;
   if (k === "swAgua") { a.aguaRec.on = t.checked; guardar(); await aplicarRecAgua(); if (t.checked && isNative) toast("Recordatorios de agua activados"); }
   else if (k === "aguaRec") { a.aguaRec[t.dataset.k] = +t.value; if (a.aguaRec.hasta < a.aguaRec.desde) a.aguaRec.hasta = a.aguaRec.desde; guardar(); await aplicarRecAgua(); }

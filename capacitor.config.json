@@ -3,6 +3,12 @@
   "appName": "Modo Bestia",
   "webDir": "www",
   "plugins": {
-    "LocalNotifications": { "smallIcon": "ic_stat_icon", "iconColor": "#F2C230" }
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#F2C230"
+    },
+    "CapacitorHttp": {
+      "enabled": true
+    }
   }
 }

@@ -15,6 +15,8 @@ App de Android para gym, nutrición y enfoque. Todo se guarda en tu teléfono.
   - Puntos extra: hábito +5, meta de agua +10, entrenamiento +25, Pomodoro +5, medalla +25.
 - **Especies:** monstruo, gorila, ajolote y xolo (en la Tienda). Todos los accesorios les quedan a todos.
 - **Notificación persistente y mascota flotante** (Ajustes → Mascota). La flotante necesita el permiso "Mostrar sobre otras apps".
+- **v1.4:** calculadora lb ⇄ kg (y escribir "135lb" en una serie), editor de rutina (Gym → Rutina), Coach con IA que propone y aplica cambios (Gym → Coach IA, necesita llave de Gemini o Claude en Ajustes), sincronizar con otro dispositivo (Ajustes → Enviar/Recibir) y control de música en Gym → Entrenar.
+- **v1.5 Spotify:** Ajustes → Música → Spotify → Conectar. Busca canciones, pon playlists y cambia el dispositivo desde Gym → Entrenar (necesita Premium). En la app de developer.spotify.com el Redirect URI es `com.joel.mamadoapp://spotify-callback`.
 - **Widget:** mantén presionada la pantalla de inicio → Widgets → Modo Bestia. La mascota te recuerda agua, hábitos y retos listos.
 - **Ajustes** (engrane en Hoy): metas de macros (con sugerencia según tu peso), recordatorios de agua, recordatorio de gym por día y hora, tema claro/oscuro, exportar e importar respaldo.
 

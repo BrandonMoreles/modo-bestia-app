@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(ScreenTimePlugin.class);
         registerPlugin(PetWidgetPlugin.class);
+        registerPlugin(MusicPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

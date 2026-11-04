@@ -1,7 +1,7 @@
 // Datos fijos de la app (todo funciona sin internet)
 
 // [nombre, series, reps, descanso en segundos]
-const RUTINA = {
+const RUTINA_BASE = {
   torsoA:{nombre:"Torso A", ej:[
     ["Press de banca con barra",4,"6–8",150],["Remo con barra",4,"6–8",150],
     ["Press militar con mancuernas",3,"8–10",120],["Jalón al pecho",3,"8–10",120],
@@ -20,7 +20,7 @@ const RUTINA = {
     ["Peso muerto / hip thrust",4,"6–10",150],["Sentadilla búlgara",3,"8–12",90],
     ["Extensión de cuádriceps",3,"12–15",60],["Curl femoral sentado",3,"12–15",60],
     ["Pantorrilla sentado",4,"12–20",60],["Elevación de piernas colgado",3,"10–15",60]]},
-  brazo:{nombre:"Brazo y hombro", ej:[
+  brazo:{nombre:"Brazo y hombro", opcional:true, ej:[
     ["Press Arnold",3,"10–12",90],["Elevaciones laterales",4,"15–20",60],
     ["Pájaros",3,"15",60],["Curl inclinado con mancuernas",3,"10–12",60],
     ["Fondos",3,"8–12",90],["Curl en polea",3,"12–15",60],

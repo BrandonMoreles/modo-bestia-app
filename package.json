@@ -1,7 +1,7 @@
 {
   "name": "modo-bestia",
   "version": "1.0.0",
-  "description": "Gym, nutrici\u00f3n y enfoque",
+  "description": "Gym, nutrición y enfoque",
   "main": "index.js",
   "scripts": {
     "sync": "npx cap sync android",
@@ -12,6 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "^8.5.2",
     "@capacitor/filesystem": "^8.1.4",
     "@capacitor/local-notifications": "^8.3.1",
