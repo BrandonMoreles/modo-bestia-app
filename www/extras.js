@@ -3,6 +3,18 @@
 
 const MUS = plug("Musica");
 const LB = 0.45359237;
+// Íconos del reproductor dibujados (no emoji), toman el color del texto
+const ICO = {
+  prev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="2.6" height="14" rx="1"/><path d="M19 5.8v12.4a1 1 0 0 1-1.5.86L8.6 13.4a1.6 1.6 0 0 1 0-2.8l8.9-5.66A1 1 0 0 1 19 5.8z"/></svg>',
+  next: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="16.4" y="5" width="2.6" height="14" rx="1"/><path d="M5 5.8v12.4a1 1 0 0 0 1.5.86l8.9-5.66a1.6 1.6 0 0 0 0-2.8L6.5 4.94A1 1 0 0 0 5 5.8z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5.6v12.8a1 1 0 0 0 1.52.85l10.2-6.4a1 1 0 0 0 0-1.7L9.52 4.75A1 1 0 0 0 8 5.6z"/></svg>',
+  pausa: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg>',
+  mas: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  nota: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M9 17.5V6.2a1 1 0 0 1 .76-.97l9-2.2A1 1 0 0 1 20 4v11.5a3 3 0 1 1-2-2.83V8.3l-7 1.7v7.5a3 3 0 1 1-2-2.83z"/></svg>',
+  buscar: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>',
+  bocina: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+};
+
 
 // ================= Calculadora lb ⇄ kg =================
 let calc = {v: "", de: "lb", barra: 45, discos: {45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0}};
@@ -336,11 +348,11 @@ function playerCard() {
 }
 function playerHTML() {
   const btn = (a, s, l) => `<button class="pbtn" aria-label="${l}" data-act="mus" data-a="${a}">${s}</button>`;
-  const ctrl = `<div class="row" style="gap:4px">${btn("prev", "⏮", "Anterior")}${btn("toggle", mus.sonando ? "⏸" : "▶", mus.sonando ? "Pausa" : "Reproducir")}${btn("next", "⏭", "Siguiente")}</div>`;
+  const ctrl = `<div class="row" style="gap:4px">${btn("prev", ICO.prev, "Anterior")}${btn("toggle", mus.sonando ? ICO.pausa : ICO.play, mus.sonando ? "Pausa" : "Reproducir")}${btn("next", ICO.next, "Siguiente")}</div>`;
   const info = mus.titulo
     ? `<div style="min-width:0;flex:1"><div class="t" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(mus.titulo)}</div><div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(mus.artista)}</div></div>`
     : `<div style="min-width:0;flex:1"><div class="t">Música</div><div class="muted small">${mus.ok === false ? `<a href="#" data-act="musPerm">Ver qué suena</a> · ` : ""}<a href="#" data-act="musSpotify">Abrir Spotify</a></div></div>`;
-  return `<div class="row">${mus.arte ? `<img src="data:image/png;base64,${mus.arte}" alt="" style="width:46px;height:46px;border-radius:8px;flex:0 0 auto">` : `<div class="pnota">♪</div>`}${info}${ctrl}</div>`;
+  return `<div class="row">${mus.arte ? `<img src="data:image/png;base64,${mus.arte}" alt="" style="width:46px;height:46px;border-radius:8px;flex:0 0 auto">` : `<div class="pnota">${ICO.nota}</div>`}${info}${ctrl}</div>`;
 }
 async function refrescarMusica() {
   if (!MUS) return;

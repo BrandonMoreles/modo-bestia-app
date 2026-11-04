@@ -97,16 +97,16 @@ async function spRefrescar() {
   const p = $("#player"); if (p) p.innerHTML = spPlayerHTML();
 }
 function spPlayerHTML() {
-  if (!spConectado()) return `<div class="row"><div class="pnota">♪</div><div style="flex:1;min-width:0"><div class="t">Spotify</div><div class="muted small">No conectado</div></div><button class="btn primary" data-act="spConectar">Conectar</button></div>`;
+  if (!spConectado()) return `<div class="row"><div class="pnota">${ICO.nota}</div><div style="flex:1;min-width:0"><div class="t">Spotify</div><div class="muted small">No conectado</div></div><button class="btn primary" data-act="spConectar">Conectar</button></div>`;
   const s = spEstado || {};
   const btn = (a, t, l) => `<button class="pbtn" aria-label="${l}" data-act="spCtl" data-a="${a}">${t}</button>`;
   const prog = s.dur ? Math.min(100, ((s.prog + (s.sonando ? Date.now() - s.at : 0)) / s.dur) * 100) : 0;
-  return `<div class="row">${s.arte ? `<img src="${esc(s.arte)}" alt="" style="width:46px;height:46px;border-radius:8px;flex:0 0 auto">` : `<div class="pnota" style="color:#1DB954">♪</div>`}
+  return `<div class="row">${s.arte ? `<img src="${esc(s.arte)}" alt="" style="width:46px;height:46px;border-radius:8px;flex:0 0 auto">` : `<div class="pnota" style="color:#1DB954">${ICO.nota}</div>`}
       <div style="min-width:0;flex:1"><div class="t" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.titulo || (s.error ? "Spotify" : spEstado ? "Nada sonando" : "Cargando…"))}</div>
       <div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.error || (s.titulo ? s.artista + (s.disp ? " · " + s.disp : "") : "Busca algo para poner"))}</div></div>
-      <div class="row" style="gap:4px">${btn("prev", "⏮", "Anterior")}${btn("toggle", s.sonando ? "⏸" : "▶", s.sonando ? "Pausa" : "Reproducir")}${btn("next", "⏭", "Siguiente")}</div></div>
+      <div class="row" style="gap:4px">${btn("prev", ICO.prev, "Anterior")}${btn("toggle", s.sonando ? ICO.pausa : ICO.play, s.sonando ? "Pausa" : "Reproducir")}${btn("next", ICO.next, "Siguiente")}</div></div>
     ${s.titulo ? `<div class="bar" style="height:4px;margin-top:8px"><i style="width:${prog}%;background:#1DB954"></i></div>` : ""}
-    <div class="row" style="margin-top:8px"><button class="ghost grow" data-act="spBuscar">🔎 Buscar</button><button class="ghost grow" data-act="spPlaylists">Mis playlists</button><button class="ghost" data-act="spDisp" aria-label="Dispositivos">🔈</button></div>`;
+    <div class="row" style="margin-top:8px"><button class="ghost grow" data-act="spBuscar"><span class="row" style="justify-content:center;gap:6px">${ICO.buscar}Buscar</span></button><button class="ghost grow" data-act="spPlaylists">Mis playlists</button><button class="ghost" data-act="spDisp" aria-label="Dispositivos">${ICO.bocina}</button></div>`;
 }
 ACT.spCtl = async el => {
   const a = el.dataset.a;
@@ -144,11 +144,11 @@ function hojaBuscar() {
 function spResultados() {
   if (!spRes) return `<p class="muted small">Tip: busca "gym", "phonk", "corridos" o tu artista favorito.</p>`;
   if (spRes.error) return `<p class="small" style="color:var(--danger)">${esc(spRes.error)}</p>`;
-  const img = x => { const u = (x.images || x.album?.images || []).slice(-1)[0]?.url; return u ? `<img src="${esc(u)}" alt="" style="width:42px;height:42px;border-radius:6px;flex:0 0 auto">` : `<div class="pnota" style="width:42px;height:42px">♪</div>`; };
+  const img = x => { const u = (x.images || x.album?.images || []).slice(-1)[0]?.url; return u ? `<img src="${esc(u)}" alt="" style="width:42px;height:42px;border-radius:6px;flex:0 0 auto">` : `<div class="pnota" style="width:42px;height:42px">${ICO.nota}</div>`; };
   const tr = spRes.tracks || [], pl = spRes.playlists || [];
   return `${tr.length ? `<p class="muted small" style="margin:0 2px 4px">Canciones</p><div class="card" style="padding:4px 12px">${tr.map(t => `<div class="li"><div class="row" style="min-width:0">${img(t)}<div style="min-width:0"><div class="t" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div><div class="d">${esc((t.artists || []).map(a => a.name).join(", "))}</div></div></div>
-      <div class="row" style="gap:4px"><button class="pbtn" aria-label="Poner" data-act="spPoner" data-uri="${esc(t.uri)}">▶</button><button class="pbtn" aria-label="Agregar a la cola" data-act="spCola" data-uri="${esc(t.uri)}">＋</button></div></div>`).join("")}</div>` : ""}
-    ${pl.length ? `<p class="muted small" style="margin:12px 2px 4px">Playlists</p><div class="card" style="padding:4px 12px">${pl.map(p => `<div class="li" data-act="spPonerCtx" data-uri="${esc(p.uri)}" style="cursor:pointer"><div class="row" style="min-width:0">${img(p)}<div style="min-width:0"><div class="t" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</div><div class="d">${esc(p.owner?.display_name || "")}</div></div></div><span class="pbtn" style="display:grid;place-items:center">▶</span></div>`).join("")}</div>` : ""}
+      <div class="row" style="gap:4px"><button class="pbtn" aria-label="Poner" data-act="spPoner" data-uri="${esc(t.uri)}">${ICO.play}</button><button class="pbtn" aria-label="Agregar a la cola" data-act="spCola" data-uri="${esc(t.uri)}">${ICO.mas}</button></div></div>`).join("")}</div>` : ""}
+    ${pl.length ? `<p class="muted small" style="margin:12px 2px 4px">Playlists</p><div class="card" style="padding:4px 12px">${pl.map(p => `<div class="li" data-act="spPonerCtx" data-uri="${esc(p.uri)}" style="cursor:pointer"><div class="row" style="min-width:0">${img(p)}<div style="min-width:0"><div class="t" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</div><div class="d">${esc(p.owner?.display_name || "")}</div></div></div><span class="pbtn">${ICO.play}</span></div>`).join("")}</div>` : ""}
     ${!tr.length && !pl.length ? `<p class="muted small">Sin resultados.</p>` : ""}`;
 }
 ACT.spBuscarIr = async () => {
